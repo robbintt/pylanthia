@@ -85,15 +85,28 @@ def get_game_key(host, port, username, password):
         tcp_buffer += sock.recv(64)
     print(tcp_buffer)
 
+    response, _sep, _tail = tcp_buffer.partition(b'\n')
+
+    print(b'get character key from this response: ' + response)
+
+    response_parts = response.split(b'\t')[5:] # trim the leading stuff
+
+    character_keys = { char: key for char, key in zip(response_parts[1::2], response_parts[::2]) }
+
+    if character not in character_keys.keys():
+        raise Exception("Your character name is not on this account")
+    else:
+        print(character_keys[character])
+
     # choose character - not sure if necessary, can use for validation
-    sock.sendall(b'L\t' + character + b'\tPLAY\n')
+    sock.sendall(b'L\t' + character_keys[character] + b'\tPLAY\n')
     # drop the response for now, we specify this in settings
     tcp_buffer = bytes()
     while b'\n' not in tcp_buffer:
         tcp_buffer += sock.recv(64)
     print("ready to play: ", tcp_buffer)
 
-    # can i just ditch right here?
+    # character key is now attached to the game key
     return KEY
 
 
