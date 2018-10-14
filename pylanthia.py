@@ -329,7 +329,7 @@ def parse_events(parser, root_element, still_parsing):
 
             # catchall
             else:
-                text_lines.put((('text', + etree.tostring(e)),)) # tostring is making a bytes string
+                text_lines.put((('text', b'pushStream: ' + etree.tostring(e)),)) # tostring is making a bytes string
 
             return
 
@@ -544,7 +544,7 @@ def process_game_xml(preprocessed_lines, text_lines):
 
         # if the line is text...
         else:
-            text_lines.put(op_line)
+            text_lines.put((op_line[linenum],))
 
 
         linenum += 1
@@ -641,7 +641,7 @@ def urwid_main():
     # whether the compass arrow last received game state
     # currently just used to display them all as a placeholder
 
-    fixed_size_for_now = 30
+    fixed_size_for_now = 40
     main_window = urwid.Text('') # initalize the window empty
     input_box = urwid_readline.ReadlineEdit('> ', '') # pretty sure urwid_readline package needs Python3
 
@@ -740,7 +740,6 @@ def urwid_main():
             # do this first so that the urwid MainLoop 'loop' exists! otherwise too fast
             # it would be better to kick this off inside loop.run I think
             time.sleep(SCREEN_REFRESH_SPEED)
-
 
             status_line_contents = dict()
             # calculate remaining roundtime
