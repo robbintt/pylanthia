@@ -81,6 +81,59 @@ def filter_lines(view_lines):
     for exclude in excludes:
         view_lines = [line for line in view_lines if line[0:len(exclude)] != exclude]
 
+    for line in view_lines:
+        logging.info("line is type"+str(type(line)))
+
+        for letter in line:
+            logging.info("letter is type"+str(type(letter)))
+
+
+    # first lets just rip out the xml... later we will want to process it back into the stream
+    # mostly we can use the xml just to update the state, if that's the case then if we miss
+    # one then it's no proble, we just catch the next one... provided they are regular enough.
+    # if they are not, or set state once, then we definitely want to catch every one
+    xml_free_lines = list()
+    for line in view_lines:
+
+        # assuming lines only have xml if they start with xml? interesting idea, not sure if real
+        i = 0 
+        xml_free_line_segments = list()
+        xml_line_segments = list()
+        xml_free_line_part = b''
+        xml_line_part = b''
+
+        # make a bunch of line segments
+        # note that line is a bytes() type, indexing line[i] returns int
+        # if we slice into it line[i:i+1] we get a bytes() type of length 1
+        while i < len(line):
+            if line[i:i+1] != b'<':
+                xml_free_line_part += line[i:i+1]
+            else:
+
+                # increment until you get out of the xml tag or out of the line
+                while i < len(line) and line[i:i+1] != b'>':
+                    xml_line_part += line[i:i+1]
+                    i += 1
+                # store the xml part off
+                xml_line_segments.append(xml_line_part)
+                xml_line_part = b'' # reset the xml part
+
+            # store xml free part off
+            if len(xml_free_line_part) > 1:
+                xml_free_line_segments.append(xml_free_line_part)
+                xml_free_line_part = b'' # reset the xml_free_line_part
+
+            i += 1 # covers incrementing past the '>' and incrementing if not yet in a '<'
+
+        # for now just join the xml free parts and only show those... we can process the xml elsewhere
+
+        xml_free_lines.append(b''.join(xml_free_line_segments))
+
+                        
+    # just point it here for now so we don't have to change the return
+    view_lines = xml_free_lines
+
+
 
     '''
     EXCLUDES = [
