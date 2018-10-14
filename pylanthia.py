@@ -277,44 +277,44 @@ def process_game_xml(preprocessed_lines, text_lines):
                     logging.info("popBold: " + repr(attrib))
                     return
 
+                def roundTime(attrib):
+                    '''
+                    '''
+                    logging.info("roundTime: " + repr(attrib))
+                    # if they forget roundTime 'value', then we don't update the state
+                    if e.attrib.get('value'):
+                        global_game_state.roundtime = int(e.attrib.get('value'))
+                    return
+
+                def prompt(attrib):
+                    '''
+                    '''
+                    #logging.info("prompt 'time': " + repr(attrib))
+                    #modified_line = ('text', 'THE TIME IS:', e.attrib.get('time'))
+                    #logging.info('** TIME ** ' + e.attrib.get('time'))
+                    #logging.info(modified_line)
+
+                    if e.attrib.get('time'):
+                        global_game_state.time = int(e.attrib.get('time'))
+                    return
+
+                    
+
                 # you would use if statements on the attribs inside
                 # attribs can always be passed as elem.attrib in this format
-                xml_actions = { 'popBold' : popBold }
-                #               'prompt'  : function2 }
+                xml_actions = { 'popBold' : popBold,
+                                'roundTime'  : roundTime,
+                                'prompt'  : prompt }
 
                 # run the function at e.tag
-                # i guess if there isn't a tag, pass
-
+                # if there isn't a tag just skip it... 
                 if xml_actions.get(e.tag, None):
                     logging.info("found function for {}: {}".format(e.tag, xml_actions[e.tag]))
                     xml_actions[e.tag](e.attrib)
-
-
-                '''
-                if e.tag == 'popBold':
+                else:
+                    # we could do something custom here, like log the missing xml_action for later use
                     pass
-                    # check the child element for elem prompt attrib time!
-                    # or better, traverse the child elements
-                    # or even better, stop parsing elements ending with a /> as having a closing tag...
-                '''
 
-                # i thought this descended into all elements of the tree and would find all of these
-                if e.tag == 'prompt' and e.attrib.get('time'):
-
-                    # this doesn't always log, and it never seems to show up in the processed text
-                    # may just be where my processed text feed is coming from still of course
-                    # i think the parser is missing the child elements though
-                    # need to iterate descendants?? what clean way to do this...
-                    modified_line = ('text', 'THE TIME IS:', e.attrib.get('time'))
-                    logging.info(modified_line)
-                    logging.info('** TIME ** ' + e.attrib.get('time'))
-                    global_game_state.time = int(e.attrib.get('time'))
-
-                # <roundTime value='1543879803'/>
-                if e.tag == 'roundTime' and e.attrib.get('value'):
-                    logging.info('** ROUNDTIME ** ' + e.attrib.get('value'))
-                    global_game_state.roundtime = int(e.attrib.get('value'))
-                    
 
 
         return root_element, still_parsing
