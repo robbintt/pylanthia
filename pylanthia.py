@@ -717,7 +717,7 @@ def urwid_main():
     # whether the compass arrow last received game state
     # currently just used to display them all as a placeholder
 
-    fixed_size_for_now = 40
+    fixed_size_for_now = 30
     main_window = urwid.Text('') # initalize the window empty
     input_box = urwid_readline.ReadlineEdit('> ', '') # pretty sure urwid_readline package needs Python3
 
@@ -780,9 +780,10 @@ def urwid_main():
 
         if key in ("left"):
             ''' 
-            would rather be able to move across the input fields with this
-            basically "set_edit_pos to one less than whatever it is"
-            for now lets use it to clear the rt_command_queue which needs a hotkey
+            interestingly, because of urwid-readline, i can use right and left arrows
+            but only when there is already text on the line, and not on the far edges
+            so on the far left, a left key will trigger this
+            on the far right, a right key will trigger unknown key: right
             '''
             # need the mutex because this uses a function of the underlying deque
             # see: https://stackoverflow.com/a/6518011
