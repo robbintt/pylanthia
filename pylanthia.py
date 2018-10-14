@@ -12,6 +12,40 @@ consecutive xml tags so some data needs to be extracted from the stream
 The stream can also be logged directly and replayed in order to test certain behavior.
 This is probably the best place to start.
 
+Processing steps before player sees lines:
+
+    1. convert xml lines to events or 'window streams'
+        - some streams:
+            - room
+            - backpack
+            - inventory
+            - health snapshot
+            - roundtime
+            - prompt/time
+            - logins, logouts
+            - deaths, raises, etc?
+    3. 'ignore filter' the lines
+        - a line is ignored if a substring is found in it
+    4. 'color filter' the lines: 
+        - substring search, potential for regex search
+        - a line can be colored or just the substring/regex section of the string
+        - need conversion of hex colors downscaled for terminal? mapping?
+    5. need persistent data structure to store 'ignore filters' and 'color filters'
+        - SQLite or flat config file
+        - maybe a flat config file at first so it can be configured outside the game
+        - ability to hot reload the flat config
+        - how will a player use filters to create new streams?
+            - this is a killer feature
+
+
+
+TODO:
+    - log per character name
+    - make a 'last played' log that is easier to tail for debugging and building xml
+    - separate xml parsing into its own data structure, consider sqlite if huge
+
+
+
 '''
 import socket
 import threading
@@ -160,10 +194,13 @@ def process_lines(tcp_lines, player_lines):
     '''
 
     while True:
-        # should this use tcp_buffering function?
+
+        # only process a line if one exists
         if not tcp_lines.empty():
 
-            # this needs to handle blocks
+            # if the line disappears this will block until another is ready
+            # this is the only consumer of tcp_lines, so this is not noteworthy
+            # but this is already written, so enjoy.
             line = tcp_lines.get()
 
             op_line = chop_xml_and_text_from_line(line)
@@ -181,7 +218,8 @@ def process_lines(tcp_lines, player_lines):
             # if there are no lines, maybe give a spinning wheel or a timeout
             pass
 
-        # not sure an ideal sleep for this thread, maybe event based...
+        # this sleep throttles max line processing speed
+        # it doesn't gate tcp_lines.get() because that function will wait on its own.
         time.sleep(BUF_PROCESS_SPEED)
 
 
