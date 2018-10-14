@@ -25,15 +25,18 @@ def setup_game_connection(host, port, server_login_token, frontend_settings):
 
     pw_hashing_key, _sep, _tail = tcp_buffer.partition(b'\n')
 
-    #print(pw_hashing_key, len(pw_hashing_key))
-    #print(password)
-    #_pass = [l for l in password]
-    #pass_decremented = [(l - 32) for l in password]
-    #_key_ints = [l for l in pw_hashing_key]
+    print("hashkey : ", pw_hashing_key)
+    print("password: ", password)
+    _pass_ints = [l for l in password]
+    _key_ints = [l for l in pw_hashing_key]
+    print("_pass_ints: ", _pass_ints)
+    print("_key_ints : ", _key_ints)
+    _xor_ints = [p ^ k for p, k in zip(_pass_ints, _key_ints)]
+    print("xor_ints  : ", _xor_ints)
+
     #pass_decremented = [(int.from_bytes(b'l', byteorder='big') - 20) for l in password]
-    #print("_pass", _pass)
+    #pass_decremented = [(l - 32) for l in password]
     #print("pass decremented", pass_decremented)
-    #print("_key_ints", _key_ints)
     hashed_password = list()
     for i, letter in enumerate(password):
         # bytes yield an int if you index them
@@ -41,19 +44,32 @@ def setup_game_connection(host, port, server_login_token, frontend_settings):
         # for some reason I get values > 128
         # print(int.from_bytes(pw_hashing_key[i:i+1], byteorder='big')) # same as indexing
         # print(pw_hashing_key[i])
-        print(type(pw_hashing_key[i]))
-        hashed_password.append((pw_hashing_key[i] ^ (password[i] - 32)) + 32)
-    
-    # yep I am getting 1:1
-    print("pw length:", len(password))
-    print("hashed pw length:", len(hashed_password))
 
-
-    print("hashed_pw: ", hashed_password)
-    hashed_password = b''.join([bytes(chr(l), 'ascii') for l in hashed_password])
-    print(hashed_password)
+        # from warneck; warneck's 2 sources are:
+        # 1. https://www.reddit.com/r/dragonrealms/comments/4xhcb5/stepbystep_guide_on_connecting_to_dr_via_blowtorch/
+        # 2. https://github.com/jrhz/tf-dr/blob/master/DRlogin
+        xor_letter = pw_hashing_key[i] ^ letter
+        if pw_hashing_key[i] >= ord('a'): # 'a' is 97
+            xor_letter = xor_letter ^ 64 # 64 == 0x40
+        if xor_letter < ord(' '): # ' ' space is 32
+            xor_letter = xor_letter | 128 # 128 == 0x80
+        hashed_password.append(xor_letter)
+        #hashed_password.append((pw_hashing_key[i] ^ (password[i] - 32)) + 32)
     
-    sock.sendall(b'A ' + username + b' ' + hashed_password + b'\n') # request a key
+
+    print("hashed_pw_list: ", hashed_password)
+    #hashed_password = b''.join([bytes(chr(l), 'ascii') for l in hashed_password])
+    # bytes 'ascii' chokes on chr(l) if l > 127. need to concatenate...
+    # or try another encoding that supports windows hex type 128-255 (didnt get KEY but doesnt mean it failed)
+    # how about 'latin1' encoding
+    #hashed_password = b''.join([bytes(chr(l), 'latin1') for l in hashed_password])
+
+    # really hashed_password should already be convertible to bytes() as it is a seq of ints
+    # consider moving all this processing to a bytearray for simplicity
+    hashed_password = bytes(hashed_password)
+    print("hashed_pw_bytes: ", hashed_password)
+    
+    sock.sendall(b'A\t' + username + b'\t' + hashed_password + b'\n') # request a key
 
     tcp_buffer = bytes()
     while b'\n' not in tcp_buffer:
@@ -62,6 +78,7 @@ def setup_game_connection(host, port, server_login_token, frontend_settings):
     response, _sep, _tail = tcp_buffer.partition(b'\n')
 
     print(b'this response should have the string \\tKEY\\t in it: ' + response)
+    print(_sep, _tail)
 
 
     sock.sendall(b'M\n') 
