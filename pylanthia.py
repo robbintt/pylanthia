@@ -777,6 +777,11 @@ def urwid_main():
             # this doesn't work for command history
             # maybe there should be an input history
             global_game_state.input_history.append(submitted_command)
+            # replace newlines with semicolons so we can process them homogeneously
+            # may need to work with urwid-rlwrap for custom multiline paste features
+            # otherwise the major use case for this string replacement is not covered
+            submitted_command = submitted_command.replace('\r', ';').replace('\n', ';')
+            #logging.info('submitted line:' + submitted_command)
             submitted_commands = submitted_command.split(';')
             for _s_c in submitted_commands:
                 if len(_s_c) > 0:
