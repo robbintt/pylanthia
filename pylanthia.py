@@ -529,7 +529,7 @@ def urwid_main():
     uc_dl = '\u2199'
     '''
 
-    # will want to assign an order to directions, once settled on a display method
+    # note that these are ordered in Python 3.6+, this assumes you are running 3.6+ !!!
     arrows = {}
     arrows['n'] = 'n'
     arrows['e'] = 'e'
@@ -540,7 +540,17 @@ def urwid_main():
     arrows['sw'] = 'sw'
     arrows['se'] = 'se'
 
-    status_line_string = '[ RT:  {roundtime} ]' + '[ ' + ' '.join([v for k, v in arrows.items()]) + ' ]'
+    exit_string = ' '
+    for k, v in arrows.items():
+        if global_game_state.exits.get(k):
+            exit_string += v
+        else:
+            exit_string += ' ' * len(v)  # preserve spacing from glyph
+        exit_string += ' '  # separator whitespace
+
+    # consider padding roundtime with 3 spaces
+    status_line_string = '[ RT:  {roundtime} ]' + '[{exit_string}]'
+    #status_line_string = '[ RT:  {roundtime} ]' + '[ ' + ' '.join([v for k, v in arrows.items()]) + ' ]'
 
     # imagine a function that adds a space or the arrow depending on
     # whether the compass arrow last received game state
@@ -633,6 +643,16 @@ def urwid_main():
             if current_roundtime < 0:
                 current_roundtime = 0
             status_line_contents['roundtime'] = current_roundtime
+
+            exit_string = ''
+            for k, v in arrows.items():
+                if global_game_state.exits.get(k):
+                    exit_string += v
+                else:
+                    exit_string += ' ' * len(v)  # preserve spacing from glyph
+                exit_string += ' '  # separator whitespace
+
+            status_line_contents['exit_string'] = exit_string
 
             # format the status line with the current content values
             status_line_output = status_line_string.format(**status_line_contents)
