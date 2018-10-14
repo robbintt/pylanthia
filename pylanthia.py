@@ -255,33 +255,51 @@ def parse_events(parser, root_element, still_parsing):
             xml_actions_object = XMLActions()
 
             
-            def popBold(attrib):
+            def popBold(elem):
                 ''' xml element is not used
                 '''
-                logging.info("popBold: " + repr(attrib))
+                logging.info("popBold: " + repr(elem.attrib))
                 return
 
-            def popStream(attrib):
+            def popStream(elem):
                 ''' xml element is not used
                 '''
-                logging.info("popStream: " + repr(attrib))
+                logging.info("popStream: " + repr(elem.attrib))
                 return
 
-            def roundTime(attrib):
+            def pushStream(elem):
+                ''' xml element is not used
+                '''
+                logging.info("pushStream: " + repr(elem.attrib))
+
+                if elem.attrib.get('id'):
+                    if elem.attrib[id] == 'logons':
+                        if elem.tail:
+                            text_lines.put(elem.tail)
+
+                return
+
+            def clearStream(elem):
+                ''' xml element is not used
+                '''
+                logging.info("clearStream: " + repr(elem.attrib))
+                return
+
+            def roundTime(elem):
                 '''
                 '''
-                logging.info("roundTime: " + repr(attrib))
+                logging.info("roundTime: " + repr(elem.attrib))
                 # if they forget roundTime 'value', then we don't update the state
-                if e.attrib.get('value'):
-                    global_game_state.roundtime = int(e.attrib.get('value'))
+                if elem.attrib.get('value'):
+                    global_game_state.roundtime = int(elem.attrib.get('value'))
                 return
 
-            def prompt(attrib):
+            def prompt(elem):
                 '''
                 '''
                 # if they forget time, then we don't update the state
-                if e.attrib.get('time'):
-                    global_game_state.time = int(e.attrib.get('time'))
+                if elem.attrib.get('time'):
+                    global_game_state.time = int(elem.attrib.get('time'))
                 return
 
                 
@@ -291,13 +309,17 @@ def parse_events(parser, root_element, still_parsing):
             xml_actions = { 'roundTime'  : roundTime,
                             'prompt'  : prompt,
                             'popStream' : popStream,
+                            # if i enable pushstream then it eats up the rest of the input
+                            # this is just one example of how i need to redo the xml parsing
+                            #'pushStream' : pushStream,
+                            #'clearStream' : clearStream,
                             'popBold' : popBold }
 
             # run the function at e.tag
             # if there isn't a tag just skip it... 
             if xml_actions.get(e.tag, None):
                 logging.info("found function for {}: {}".format(e.tag, xml_actions[e.tag]))
-                xml_actions[e.tag](e.attrib)
+                xml_actions[e.tag](e)
             else:
                 # intentionally still passing: popBold
                 # for now: put all xml lines not in xml_actions
