@@ -39,7 +39,7 @@ log_location = os.path.join(log_directory, log_filename)
 logging.basicConfig(filename=log_location, level=logging.INFO)
 
 
-BUFSIZE = 32 # adjust based on actual data for dr buffers
+BUFSIZE = 128 # adjust based on actual data for dr buffers
 
 
 def filter_lines(view_lines):
@@ -88,22 +88,21 @@ def filter_lines(view_lines):
     return view_lines
 
 
-
 def get_tcp_lines():
     ''' receive text and xml into a buffer and split on newlines
     '''
-    view_buffer = bytes()
+    tcp_buffer = bytes()
     while True:
         res = sock.recv(BUFSIZE)
-        view_buffer += res
-        if b'\n' in view_buffer:
+        tcp_buffer += res
+        if b'\n' in tcp_buffer:
             new_tcp_lines = True # maybe trigger the refresh here...
-            tcp_lines.extend(view_buffer.split(b'\r\n'))
-            view_buffer = tcp_lines.pop() # leave the last line, it's normally not cooked
+            tcp_lines.extend(tcp_buffer.split(b'\r\n'))
+            tcp_buffer = tcp_lines.pop() # leave the last line, it's normally not cooked
+            logging.info("tcp lines processed: {}".format(len(tcp_buffer)))
         else:
             new_tcp_lines = False
-
-
+            logging.info("tcp line has no newline: {}".format(tcp_buffer))
 
 
 def urwid_main():
@@ -146,6 +145,8 @@ def urwid_main():
 
             # not sure if sending this has a buffer? or is it lag in the receive side...
             sock.sendall(submitted_command + b'\n')
+            if submitted_command in [b'exit', b'quit']:
+                raise Exception("Client has exited, use exception to cleanup for now.")
             return
 
         if key in ("ctrl q", "ctrl Q"):
