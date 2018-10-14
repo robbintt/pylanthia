@@ -173,22 +173,43 @@ def chop_xml_and_text_from_line(line):
         #logging.info(b'text parsed: ' + xml_free_line_part)
         xml_free_line_part = b'' # reset the xml_free_line_part
 
-    #logging.info(op_line)
-
     return op_line
 
 
-def process_lines(tcp_lines, player_lines):
+def preprocess_tcp_lines(tcp_lines, preprocessed_lines):
+    ''' Process the TCP lines into labelled lines for the XML parser
+
+    This runs in its own thread
+    '''
+    while True:
+
+        # only process a line if one exists, this is blocking by default
+        if not tcp_lines.empty():
+            preprocessed_lines.put(chop_xml_and_text_from_line(tcp_lines.get()))
+
+        # this sleep throttles max line processing speed
+        time.sleep(BUF_PROCESS_SPEED)
+
+
+def process_lines(preprocessed_lines, player_lines):
     ''' process tcp lines back to front, works in a separate thread
 
     This function takes raw TCP lines and delivers annotated XML elements and text segments
-    Sometimes a element stands alone, multiple elements per line. Sometimes a tag feeds into the next line.
-    
+
+    What if we use a preprocessor on the queue to create chop_xml_and_text_from_line's results
+    THEN we have an XML puller thread that pulls those and processes them into XML events and another Queue
+    THEN the `another queue` goes into the text filters and is displayed
+
+    1. XML puller needs to be able to pull both XML and text lines (for multiline html text body)
+
+
 
     The DR output has some XML and some text.
-
+    Sometimes a element stands alone, multiple elements per line. 
+    Sometimes a element feeds into the next line.
     Sometimes XML output is multiline.
     Sometimes multiple XML structures are added on the same line.
+
 
     Goal:
     We need to be able to split a single line of multiple XML documents up.
@@ -205,23 +226,21 @@ def process_lines(tcp_lines, player_lines):
     while True:
 
         # only process a line if one exists
-        if not tcp_lines.empty():
+        if not preprocessed_lines.empty():
 
             # if the line disappears this will block until another is ready
             # this is the only consumer of tcp_lines, so this is not noteworthy
             # but this is already written, so enjoy.
-            line = tcp_lines.get()
-
-            op_line = chop_xml_and_text_from_line(line)
+            line = preprocessed_lines.get()
 
             # process xml in place, sometimes process_game_xml will need to hold the line until
             # it gets enough lines for a particular multi-line XML element
             # so that will be some sort of object?
             # for now we are just processing single line XML with a function...
-            if op_line and op_line[0][0] == 'xml':
-                op_line = process_game_xml(op_line)
+            if line and line[0][0] == 'xml':
+                line = process_game_xml(line)
 
-            rebuilt_line = b''.join(x[1] for x in op_line)
+            rebuilt_line = b''.join(x[1] for x in line)
             player_lines.append(rebuilt_line)
         else:
             # if there are no lines, maybe give a spinning wheel or a timeout
@@ -599,6 +618,7 @@ if __name__ == '__main__':
     global_game_state = GlobalGameState()
 
     tcp_lines = queue.Queue() # split the tcp buffer on '\r\n'
+    preprocessed_lines = queue.Queue()
     player_lines = deque() # process the xml into a player log, which can also be a player view
     
     GAME_KEY = get_game_key(eaccess_host, eaccess_port, username, password)
@@ -606,7 +626,11 @@ if __name__ == '__main__':
     # hopefully we can reuse this to reload the game if it breaks
     gamesock = setup_game_connection(server_addr, server_port, GAME_KEY, frontend_settings)
 
-    process_lines_thread = threading.Thread(target=process_lines, args=(tcp_lines, player_lines))
+    preprocess_lines_thread = threading.Thread(target=preprocess_tcp_lines, args=(tcp_lines, preprocessed_lines))
+    preprocess_lines_thread.daemon = True # closes when main thread ends
+    preprocess_lines_thread.start()
+
+    process_lines_thread = threading.Thread(target=process_lines, args=(preprocessed_lines, player_lines))
     process_lines_thread.daemon = True # closes when main thread ends
     process_lines_thread.start()
 
