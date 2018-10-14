@@ -792,7 +792,14 @@ def urwid_main():
             # otherwise the major use case for this string replacement is not covered
             submitted_command = submitted_command.replace('\r', ';').replace('\n', ';')
             #logging.info('submitted line:' + submitted_command)
-            submitted_commands = submitted_command.split(';')
+
+            # use a regex split here so that backslash can escape & 0send semicolon through the prompt
+            re_semi_splitter = r'(?<!\\);'
+            # replace all backslashes and strip all whitespace from the processed result
+            submitted_commands = [c.replace('\\', '').strip() for c in \
+                    re.split(re_semi_splitter, submitted_command)]
+            #submitted_commands = submitted_command.split(';')
+
             for _s_c in submitted_commands:
                 if len(_s_c) > 0:
                     _s_c = bytes(_s_c, "utf-8")
