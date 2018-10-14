@@ -1,2 +1,3 @@
+lxml==4.2.5
 urwid==2.0.1
 urwid-readline==0.8
