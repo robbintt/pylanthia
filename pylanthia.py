@@ -69,20 +69,93 @@ root_logger.addHandler(tcplog_handler)
 
 
 def process_lines(tcp_lines, player_lines):
-    ''' process the deque of tcp lines back to front
+    ''' process the deque of tcp lines back to front, works in a separate thread
 
-    call this function in a thread
-
-    need thread safety on: tcp_line and player_line
-
+    need thread safety on: tcp_line and player_line (both collections.deque type)
     player_line will also be written to a file and only 4000 lines will stay in the buffer
     tcp_line will also be written to as it is parsed from the tcp_buffer
+
+    processing the xml-style tokens is weird
+        ex. inventory streamWindow - primes inventory, but there are still more indicators...
+            the final xml before the inv text is: <pushStream id='inv'/>Your worn items are:\r\n
+            then after the inv text is: <popStream/>\r\n
+    if i could process this multiline token, it would solve some of my issue
+    a ton of tokens are duplicate and can just be dropped
     ''' 
 
     while True:
         if tcp_lines:
 
             current_line = tcp_lines.popleft()
+
+
+            # this is just grabbed from the filter function, delete that one once you're done messing around
+            # the code is somehow dropping a letter off the end of some or all 'text' strings
+
+            line = current_line
+            # assuming lines only have xml if they start with xml? interesting idea, not sure if real
+            i = 0 
+            xml_free_line_segments = list()
+            xml_line_segments = list()
+            xml_free_line_part = b''
+            xml_line_part = b''
+            op_line = list() # give an ordered and parsed tuple of (string, type) 
+
+
+            # ISSUE: i'm pretty sure this is dropping a letter off the first non-xml line segment (or more)
+            # make a bunch of line segments
+            # note that line is a bytes() type, indexing line[i] returns int
+            # if we slice into it line[i:i+1] we get a bytes() type of length 1
+            while i < len(line):
+
+                if line[i:i+1] != b'<':
+                    xml_free_line_part += line[i:i+1]
+
+                else:
+
+                    # increment until you get out of the xml tag or out of the line
+                    while i < len(line) and line[i:i+1] != b'>':
+                        xml_line_part += line[i:i+1]
+                        i += 1
+
+                    # toss the last b'>' on the end!
+                    xml_line_part += line[i:i+1]
+
+                    # store the xml part off
+                    xml_line_segments.append(xml_line_part)
+                    op_line.append(('xml', xml_line_part))
+                    xml_line_part = b'' # reset the xml part
+
+
+                # store xml free part off
+                if len(xml_free_line_part) > 1:
+                    xml_free_line_segments.append(xml_free_line_part)
+                    op_line.append(('text', xml_free_line_part))
+                    xml_free_line_part = b'' # reset the xml_free_line_part
+
+                i += 1 # covers incrementing past the '>' and incrementing if not yet in a '<'
+
+            if op_line:
+
+                if op_line[0][0] == 'xml':
+                    if op_line[0][1].startswith(b'<prompt time="'):
+                        op_line.pop(0)
+
+
+            # strip the line back down to text
+            # replace is not working somehow... the &gt; is in the text component...
+            clean_line = b''.join([x[1].replace(b'&gt;', b'>') for x in op_line if x[0] == 'text'])
+
+            # send a hunk of xml so we can see what happened
+            xml_line = b''.join([x[1].replace(b'&gt;', b'>') for x in op_line if x[0] == 'xml'])
+
+            current_line = clean_line + b' :: ' + xml_line
+
+
+
+
+
+
             # lets just put this in a thread to start
             player_lines.append(current_line)
         else:
