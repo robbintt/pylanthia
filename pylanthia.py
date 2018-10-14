@@ -23,7 +23,7 @@ import datetime
 import logging
 import os
 
-import lxml.etree
+from lxml import etree
 
 import urwid
 import urwid_readline
@@ -156,7 +156,12 @@ def process_lines(tcp_lines, player_lines):
 
             op_line = chop_xml_and_text_from_line(line)
 
-            # process xml in place before this, this step leaves any unprocessed xml
+            # process xml in place, sometimes process_game_xml will need to hold the line until
+            # it gets enough lines for a particular multi-line XML element
+            # so that will be some sort of object?
+            # for now we are just processing single line XML with a function...
+            if op_line and op_line[0][0] == 'xml':
+                op_line = process_game_xml(op_line)
 
             rebuilt_line = b''.join(x[1] for x in op_line)
             player_lines.append(rebuilt_line)
@@ -166,6 +171,66 @@ def process_lines(tcp_lines, player_lines):
 
         # not sure an ideal sleep for this thread, maybe event based...
         time.sleep(BUF_PROCESS_SPEED)
+
+
+def process_game_xml(op_line):
+    ''' Get any game state out of the XML, return a replacement line
+
+    I think I'll need an empty line filter after this, since game state will often
+    return nothing except in a UI indicator. Don't go too far with this though since
+    lines will also be filtered into streams for composition by users.
+
+    This is a temporary function, it will probably end up being an object that has the
+    ability to hold a line and request more lines. Some XML elements are always
+    multiline and we want to be able to parse those as a single glob.
+
+    The failure state (xml not processed) should leave the XML in the display, so the
+    player can report the issue and work around it without missing an important detail.
+    '''
+   
+    # use the same rebuilt_line code pattern from above
+    # the current text/xml chopper actually chops xml by tag... which ruins it
+    rebuilt_line = b''.join(x[1] for x in op_line)
+    # assign this for now so we don't have to rename the variable for testing
+    
+    modified_line = ''
+
+    def print_events(parser):
+        ''' quick and dirty, show the time events
+        '''
+        for action, elem in parser.read_events():
+            #logging.info('feed={}: {}, tag: {}'.format(action, elem, elem.tag))
+            #logging.info('attribute dict:', elem.attrib)
+
+            if elem.tag == 'popBold':
+                pass
+                # check the child element for elem prompt attrib time!
+                # or better, traverse the child elements
+                # or even better, stop parsing elements ending with a /> as having a closing tag...
+
+            # i thought this descended into all elements of the tree and would find all of these
+            if elem.tag == 'prompt' and elem.attrib.get('time'):
+
+                # this doesn't always log, and it never seems to show up in the processed text
+                # may just be where my processed text feed is coming from still of course
+                # i think the parser is missing the child elements though
+                # need to iterate descendants?? what clean way to do this...
+                modified_line = ('text', 'THE TIME IS:', elem.attrib['time'])
+                logging.info(modified_line)
+
+    events = ('start', 'end')
+    parser = etree.XMLPullParser(events, recover=True) # we don't want to raise errors
+
+    logging.info(b'xml parsed:' + rebuilt_line)
+    parser.feed(rebuilt_line)
+
+    print_events(parser)
+
+    # this needs to follow the format of op_line
+    if modified_line:
+        return(modified_line)
+
+    return op_line
 
 
 def filter_lines(view_lines):
@@ -236,9 +301,6 @@ def filter_lines(view_lines):
 
             i += 1 # covers incrementing past the '>' and incrementing if not yet in a '<'
 
-
-        # for now just join the xml free parts and only show those... we can process the xml elsewhere
-
         '''
         # https://lxml.de/tutorial.html
         # if the xml cannot be parsed, we just want to catch it and decide what to do
@@ -258,11 +320,6 @@ def filter_lines(view_lines):
         # do stuff with the xml components of the line
         op_line = ordered_parsed_line
 
-        if op_line:
-
-            if op_line[0][0] == 'xml':
-                if op_line[0][1].startswith(b'<prompt time="'):
-                    op_line.pop(0)
 
 
         # strip the line back down to text
