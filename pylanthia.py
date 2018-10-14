@@ -107,7 +107,8 @@ class GlobalGameState:
         '''
         '''
         self.roundtime = 0
-        self.time = 0
+        self.reported_time = 0 # actual time reported by the server
+        self.time = 0 # time reported by the server incremented by client side clock
         self.time_last_command = 0 # the time of the last command submitted
         self.exits = dict()
         self.reset_exits()
@@ -421,7 +422,8 @@ def parse_events(parser, root_element, still_parsing):
             '''
             # if they forget time, then we don't update the state
             if elem.attrib.get('time'):
-                global_game_state.time = int(elem.attrib.get('time'))
+                global_game_state.reported_time = int(elem.attrib.get('time'))
+                global_game_state.time = global_game_state.reported_time
             return
 
         def preset(elem):
@@ -736,7 +738,7 @@ def urwid_main():
         exit_string += ' '  # separator whitespace
 
     # consider padding roundtime with 3 spaces
-    status_line_string = '[ RT:  {roundtime} ]' + '[{exit_string}]'
+    status_line_string = '[ RT:  {roundtime}{roundtime_stable} ]' + '[{exit_string}]'
     #status_line_string = '[ RT:  {roundtime} ]' + '[ ' + ' '.join([v for k, v in arrows.items()]) + ' ]'
 
     # imagine a function that adds a space or the arrow depending on
@@ -899,7 +901,12 @@ def urwid_main():
             current_roundtime = int(global_game_state.roundtime - global_game_state.time)
             if current_roundtime < 0:
                 current_roundtime = 0
-            status_line_contents['roundtime'] = current_roundtime
+            if current_roundtime < 10:
+                # pad < 10
+                status_line_contents['roundtime'] = ' ' + str(current_roundtime)
+            else:
+                # don't pad > 10, note, for roundtimes 100+ there will be a shift in the UI. #wontfix
+                status_line_contents['roundtime'] = '' + str(current_roundtime)
 
             exit_string = ''
             for k, v in arrows.items():
@@ -910,6 +917,14 @@ def urwid_main():
                 exit_string += ' '  # separator whitespace
 
             status_line_contents['exit_string'] = exit_string
+
+            # show the roundtime stable indicator if both time and roundtime are reported
+            # this will be false only when the displayed roundtime is based on projected time
+            # (global_game_state.time is projected time)
+            if global_game_state.reported_time >= global_game_state.roundtime:
+                status_line_contents['roundtime_stable'] = '.'
+            else:
+                status_line_contents['roundtime_stable'] = ' '
 
             # format the status line with the current content values
             status_line_output = status_line_string.format(**status_line_contents)
