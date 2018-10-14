@@ -64,6 +64,7 @@ def get_game_key(host, port, username, password):
     print(response_parts)
 
     if response_parts[0] != b'A':
+        print('Not well formed!:', response_parts)
         pass # this should probably throw an Exception
 
     KEY = response_parts[3] # here ya go

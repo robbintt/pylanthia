@@ -72,7 +72,6 @@ def chop_xml_and_text_from_line(line):
     return an ordered and parsed list of: [string value, xml or text?]
     '''
 
-    # ISSUE: i'm pretty sure this is dropping a letter off the first non-xml line segment (or more)
     # make a bunch of line segments
     # note that line is a bytes() type, indexing line[i] returns int
     # if we slice into it line[i:i+1] we get a bytes() type of length 1
@@ -116,7 +115,7 @@ def chop_xml_and_text_from_line(line):
         #logging.info(b'text parsed: ' + xml_free_line_part)
         xml_free_line_part = b'' # reset the xml_free_line_part
 
-    logging.info(op_line)
+    #logging.info(op_line)
 
     return op_line
 
@@ -155,12 +154,11 @@ def process_lines(tcp_lines, player_lines):
 
             line = tcp_lines.popleft()
 
-            #op_line = chop_xml_and_text_from_line(line)
+            op_line = chop_xml_and_text_from_line(line)
 
             # process xml in place before this, this step leaves any unprocessed xml
 
-            #rebuilt_line = b''.join(x[1] for x in op_line)
-            rebuilt_line = line # find the lag
+            rebuilt_line = b''.join(x[1] for x in op_line)
             player_lines.append(rebuilt_line)
         else:
             # if there are no lines, maybe give a spinning wheel or a timeout
@@ -345,15 +343,43 @@ def urwid_main():
     ''' just the main process for urwid... needs renamed and fixed up
     '''
 
+    #uc_u = '\u25B2'
+    '''
+    uc_u = '\u2191'
+    uc_d = '\u2193'
+    uc_l = '\u2190'
+    uc_r = '\u2192'
+
+    uc_ul = '\u2196'
+    uc_ur = '\u2197'
+    uc_dr = '\u2198'
+    uc_dl = '\u2199'
+    '''
+    arrows = {}
+    arrows['n'] = 'n'
+    arrows['e'] = 'e'
+    arrows['s'] = 's'
+    arrows['w'] = 'w'
+    arrows['nw'] = 'nw'
+    arrows['ne'] = 'ne'
+    arrows['sw'] = 'sw'
+    arrows['se'] = 'se'
+
+    # imagine a function that adds a space or the arrow depending on
+    # whether the compass arrow last received game state
+    # currently just used to display them all as a placeholder
+
     # wrap the top text widget with a flow widget like Filler: https://github.com/urwid/urwid/wiki/FAQ
     #main_window = urwid.Text('\r\n'.join(tcp_lines))
     fixed_size_for_now = 30
     main_window = urwid.Text('') # initalize the window empty
     input_box = urwid_readline.ReadlineEdit('> ', '') # pretty sure urwid_readline package needs Python3
+    status_line = urwid.Text('[RT: 5]' + '[ ' + ' '.join([v for k, v in arrows.items()]) + ' ]')
     mainframe = urwid.Pile([
         ('weight', fixed_size_for_now, urwid.Filler(main_window, valign='bottom')),
+        ('fixed', 1, urwid.Filler(status_line, 'bottom')),
         ('fixed', 1, urwid.Filler(input_box, 'bottom')),
-    ], focus_item=1)
+    ], focus_item=2)
 
     # these were for the terminal
     def set_title(widget, title):
