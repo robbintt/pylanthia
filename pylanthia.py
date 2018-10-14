@@ -90,7 +90,7 @@ from lib import chop_xml_and_text
 TCP_BUFFER_SLEEP = 0.01 # not sure if i want to sleep this or not
 SCREEN_REFRESH_SPEED = 0.1 # how fast to redraw the screen from the buffer
 BUF_PROCESS_SPEED = 0.01 # this is a timer for the buffer view creation thread
-COMMAND_PROCESS_SPEED = 0.1 # max speed that commands are submitted at
+COMMAND_PROCESS_SPEED = 0.3 # max speed that commands are submitted at
 BUFSIZE = 16 # This seems to give a better response time than 128 bytes
 MAX_IDLE_TIME = 60*60*2  # 60*60  # 60 minutes
 
@@ -369,12 +369,12 @@ def parse_events(parser, root_element, still_parsing):
             if elem.attrib.get('id'):
                 DEBUG_PREFIX = bytes(elem.tag, 'ascii') + b':' + bytes(elem.attrib['id'], 'ascii') + b': '
 
-                if elem.attrib['id'] == 'logons':
+                if elem.attrib['id'] in ('logons', 'atmospherics'):
                     if elem.tail:
                         text_lines.put('text', elem.tail)
                 elif elem.attrib['id'] == 'percWindow':
                     pass
-                elif elem.attrib['id'] == 'thoughts':
+                elif elem.attrib['id'] in ('talk', 'whispers', 'thoughts'):
                     pass
                 # catchall for elements WITH 'id' attr
                 else:
@@ -787,6 +787,11 @@ def urwid_main():
             # this doesn't work for command history
             # maybe there should be an input history
             global_game_state.input_history.append(submitted_command)
+            # replace newlines with semicolons so we can process them homogeneously
+            # may need to work with urwid-rlwrap for custom multiline paste features
+            # otherwise the major use case for this string replacement is not covered
+            submitted_command = submitted_command.replace('\r', ';').replace('\n', ';')
+            #logging.info('submitted line:' + submitted_command)
             submitted_commands = submitted_command.split(';')
             for _s_c in submitted_commands:
                 if len(_s_c) > 0:
