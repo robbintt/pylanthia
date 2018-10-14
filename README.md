@@ -10,7 +10,9 @@ Provide many of the useful features, including scripting, of dragonrealms client
 
 ## Python 3 virtualenv
 
+- install Python 3
 - `virtualenv -p python3 env3`
+- `. env3/bin/activate`
 - `pip install -r requirements.txt`
 
 
