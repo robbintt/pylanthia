@@ -244,13 +244,59 @@ def process_game_xml(preprocessed_lines, text_lines):
 
                 i can do this without the tag and do actions based on the tag below to parse
                 all xml... not sure if this is managing <standalone\> elements properly...
-                '''
 
+                use a dict of functions or something here
+                    - do i need to check tag name and attrib dict?
+                
+                # in this case the functions still need to handle the attrib dict
+                xml_actions = { 'popBold' : function1,
+                                'prompt'  : function2 }
+
+                
+                '''
+                # not yet used // just an idea
+                class XMLActions():
+                    ''' better as a dict or class
+
+                    i do like the strings as keys
+
+                    dot notation is not as if loading the xml->control flow
+                    from a database since it's a string anyways
+
+                    especially if i store the xml in a sqlite database
+                    '''
+                    def __init__(self):
+                        pass
+
+                xml_actions_object = XMLActions()
+
+                
+                def popBold(attrib):
+                    ''' xml element is not used
+                    '''
+                    logging.info("popBold: " + repr(attrib))
+                    return
+
+                # you would use if statements on the attribs inside
+                # attribs can always be passed as elem.attrib in this format
+                xml_actions = { 'popBold' : popBold }
+                #               'prompt'  : function2 }
+
+                # run the function at e.tag
+                # i guess if there isn't a tag, pass
+
+                if xml_actions.get(e.tag, None):
+                    logging.info("found function for {}: {}".format(e.tag, xml_actions[e.tag]))
+                    xml_actions[e.tag](e.attrib)
+
+
+                '''
                 if e.tag == 'popBold':
                     pass
                     # check the child element for elem prompt attrib time!
                     # or better, traverse the child elements
                     # or even better, stop parsing elements ending with a /> as having a closing tag...
+                '''
 
                 # i thought this descended into all elements of the tree and would find all of these
                 if e.tag == 'prompt' and e.attrib.get('time'):
@@ -536,7 +582,6 @@ def urwid_main():
             # ideally a 4000 line buffer view of the current game would be updated elsewhere and just displayed here
             # scrollable would also be really nice
             # right now it just passes the current lines
-            logging.info("VIEW BUFFER: " + repr(view_buffer))
             main_view_text = b'\n'.join(view_buffer)
 
             # the contents object is a list of (widget, option) tuples
