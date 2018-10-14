@@ -32,6 +32,7 @@ from collections import deque
 from itertools import islice
 
 from config import *
+from eaccess import get_game_key
 
 
 
@@ -593,14 +594,16 @@ def urwid_main():
     loop.run()
 
 
-def setup_game_connection(server_addr, server_port, server_login_token, frontend_settings):
+def setup_game_connection(server_addr, server_port, key, frontend_settings):
+    ''' initialize the connection and return the game socket
+    '''
 
     gamesock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server = (server_addr, int(server_port))
     gamesock.connect(server)
 
     time.sleep(1) # would be better to get an ACK of some sort before sending the token...
-    gamesock.sendall(server_login_token)
+    gamesock.sendall(key)
     gamesock.sendall(b'\n')
     gamesock.sendall(frontend_settings)
     gamesock.sendall(b'\n')
@@ -619,9 +622,15 @@ if __name__ == '__main__':
 
     tcp_lines = deque() # split the tcp buffer on '\r\n'
     player_lines = deque() # process the xml into a player log, which can also be a player view
+    
+    #GAME_KEY = get_game_key(eaccess_host, eaccess_port, username, password)
+    #GAME_KEY = b'535f8b772c26682abbd8304b23f7836d'
+    GAME_KEY = b'535f8b772c26682abbd8304b23f7836d'
+    print(GAME_KEY)
+    time.sleep(1)
 
     # hopefully we can reuse this to reload the game if it breaks
-    gamesock = setup_game_connection(server_addr, server_port, server_login_token, frontend_settings)
+    gamesock = setup_game_connection(server_addr, server_port, GAME_KEY, frontend_settings)
 
     process_lines_thread = threading.Thread(target=process_lines, args=(tcp_lines, player_lines))
     process_lines_thread.daemon = True # closes when main thread ends
