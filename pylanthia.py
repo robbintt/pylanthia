@@ -623,11 +623,7 @@ if __name__ == '__main__':
     tcp_lines = deque() # split the tcp buffer on '\r\n'
     player_lines = deque() # process the xml into a player log, which can also be a player view
     
-    #GAME_KEY = get_game_key(eaccess_host, eaccess_port, username, password)
-    #GAME_KEY = b'535f8b772c26682abbd8304b23f7836d'
-    GAME_KEY = b'535f8b772c26682abbd8304b23f7836d'
-    print(GAME_KEY)
-    time.sleep(1)
+    GAME_KEY = get_game_key(eaccess_host, eaccess_port, username, password)
 
     # hopefully we can reuse this to reload the game if it breaks
     gamesock = setup_game_connection(server_addr, server_port, GAME_KEY, frontend_settings)

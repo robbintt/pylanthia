@@ -77,7 +77,7 @@ def get_game_key(host, port, username, password):
         tcp_buffer += sock.recv(64)
     print(tcp_buffer)
 
-    # what is this... probably in some guide
+    # give character names, if you want it for validation
     sock.sendall(b'C\n')
     # drop the response for now, we specify this in settings
     tcp_buffer = bytes()
@@ -95,20 +95,6 @@ def get_game_key(host, port, username, password):
 
     # can i just ditch right here?
     return KEY
-    '''
-    sock.sendall(b'M\n') 
-    
-    tcp_buffer = bytes()
-    while b'\n' not in tcp_buffer:
-        tcp_buffer += sock.recv(64)
-
-    print(b'raw_response: ' + response)
-
-    response, _sep, _tail = tcp_buffer.partition(b'\n')
-
-    print(b'this response should have instancecodes and instancenames:' + response)
-    '''
-
 
 
 if __name__ == '__main__':
