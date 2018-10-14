@@ -49,6 +49,16 @@ log_directory = "logs"
 log_location = os.path.join(log_directory, log_filename)
 logging.basicConfig(filename=log_location, level=logging.INFO)
 
+class GlobalGameState:
+    '''
+    '''
+    def __init__(self):
+        '''
+        '''
+        self.roundtime = 0
+        self.time = 0
+
+
 
 # dump tcp separately
 tcplog_filename = "{}_tcplog.{}.txt".format('dr', datetime.datetime.now().strftime('%Y-%m-%d.%H:%M:%S'))
@@ -190,43 +200,117 @@ def process_game_xml(op_line):
    
     # use the same rebuilt_line code pattern from above
     # the current text/xml chopper actually chops xml by tag... which ruins it
-    rebuilt_line = b''.join(x[1] for x in op_line)
+    # commented rebuilt line for now bc we're individually pulling each op_line tag
+    #rebuilt_line = b''.join(x[1] for x in op_line)
     # assign this for now so we don't have to rename the variable for testing
+
+    logging.info("RAW XML:" + repr(op_line))
     
     modified_line = ''
-
-    def print_events(parser):
+    def parse_events(parser, root_element, still_parsing):
         ''' quick and dirty, show the time events
         '''
+        
         for action, elem in parser.read_events():
-            #logging.info('feed={}: {}, tag: {}'.format(action, elem, elem.tag))
-            #logging.info('attribute dict:', elem.attrib)
 
-            if elem.tag == 'popBold':
-                pass
-                # check the child element for elem prompt attrib time!
-                # or better, traverse the child elements
-                # or even better, stop parsing elements ending with a /> as having a closing tag...
+            # store the root element so we can check when it closes
+            if root_element is None:
+                root_element = elem
 
-            # i thought this descended into all elements of the tree and would find all of these
-            if elem.tag == 'prompt' and elem.attrib.get('time'):
+            # end parsing when the root element closes
+            if action == 'end' and elem is root_element:
+                still_parsing = False
 
-                # this doesn't always log, and it never seems to show up in the processed text
-                # may just be where my processed text feed is coming from still of course
-                # i think the parser is missing the child elements though
-                # need to iterate descendants?? what clean way to do this...
-                modified_line = ('text', 'THE TIME IS:', elem.attrib['time'])
-                logging.info(modified_line)
+            # lets see some stuff temporarily
+            if action == 'end':
+                logging.info("Element processed (action = end):" + elem.tag)
 
-    events = ('start', 'end')
-    parser = etree.XMLPullParser(events, recover=True) # we don't want to raise errors
 
-    logging.info(b'xml parsed:' + rebuilt_line)
-    parser.feed(rebuilt_line)
+            for e in elem.iter():
+                ''' iterate over element and all descendants in tree
 
-    print_events(parser)
+                i can do this without the tag and do actions based on the tag below to parse
+                all xml... not sure if this is managing <standalone\> elements properly...
+                '''
 
-    # this needs to follow the format of op_line
+                if e.tag == 'popBold':
+                    pass
+                    # check the child element for elem prompt attrib time!
+                    # or better, traverse the child elements
+                    # or even better, stop parsing elements ending with a /> as having a closing tag...
+
+                # i thought this descended into all elements of the tree and would find all of these
+                if e.tag == 'prompt' and e.attrib.get('time'):
+
+                    # this doesn't always log, and it never seems to show up in the processed text
+                    # may just be where my processed text feed is coming from still of course
+                    # i think the parser is missing the child elements though
+                    # need to iterate descendants?? what clean way to do this...
+                    modified_line = ('text', 'THE TIME IS:', e.attrib.get('time'))
+                    logging.info(modified_line)
+                    logging.info('** TIME ** ' + e.attrib.get('time'))
+                    global_game_state.time = int(e.attrib.get('time'))
+
+                # <roundTime value='1543879803'/>
+                if e.tag == 'roundTime' and e.attrib.get('value'):
+                    logging.info('** ROUNDTIME ** ' + e.attrib.get('value'))
+                    global_game_state.roundtime = int(e.attrib.get('value'))
+                    
+
+
+        return root_element, still_parsing
+
+
+    # may want to specify more events and use the event in the control flow...
+    events = ('start', 'end',)
+
+    # run each line as its own xml... but this is a disaster as some have closing tags!
+    linenum = 0
+    while linenum < len(op_line):
+
+
+        line = op_line[linenum]
+        # this should only log root elements
+        logging.info('root element?? should be! :' + repr(line))
+        # only feed the line if it starts with xml... is this universally true?
+        if line[0] == 'xml' and line[1]:
+
+            logging.info('now build a parser for xml line content only:' + repr(line[1]))
+
+            parser = etree.XMLPullParser(events, recover=True) # we don't want to raise errors
+            
+            # basically if the root end event has not fired, keep collecting...
+            # how do i trigger that...
+            # need to decide whether to grab another line here
+            # essentially determine if this has a closing tag
+
+            # feed lines until the root element is closed
+            root_element = None
+            still_parsing = True
+            while still_parsing and linenum < len(op_line):
+
+                # note that we DO feed text lines threaded inside an xml root element
+                nextline = op_line[linenum] # same as line, but used/incremented in this while loop
+                parser.feed(nextline[1])
+
+                # examine the parser and determine if we should feed more lines or close...
+                root_element, still_parsing = parse_events(parser, root_element, still_parsing)
+                
+                # avoid double increment in parent while loop
+                if still_parsing:
+                    linenum += 1
+            else:
+                logging.info("The final parsed XML output:" + repr(parser))
+
+
+            #parser.close() # i think i need to do this... read up
+
+        linenum += 1
+
+    #logging.info(b'xml parsed:' + rebuilt_line)
+    #parser.feed(rebuilt_line)
+
+    # temporary, replace xml and inject 1 line
     if modified_line:
         return(modified_line)
 
@@ -412,6 +496,8 @@ def urwid_main():
     uc_dr = '\u2198'
     uc_dl = '\u2199'
     '''
+
+    # will want to assign an order to directions, once settled on a display method
     arrows = {}
     arrows['n'] = 'n'
     arrows['e'] = 'e'
@@ -422,7 +508,8 @@ def urwid_main():
     arrows['sw'] = 'sw'
     arrows['se'] = 'se'
 
-    status_line_string = '[ RT:  5 ]' + '[ ' + ' '.join([v for k, v in arrows.items()]) + ' ]'
+    status_line_string = '[ RT:  {roundtime} ]' + '[ ' + ' '.join([v for k, v in arrows.items()]) + ' ]'
+
 
     # imagine a function that adds a space or the arrow depending on
     # whether the compass arrow last received game state
@@ -511,6 +598,24 @@ def urwid_main():
             time.sleep(SCREEN_REFRESH_SPEED)
 
 
+            status_line_contents = dict()
+            # calculate remaining roundtime
+            current_roundtime = int(global_game_state.roundtime - global_game_state.time)
+            if current_roundtime < 0:
+                current_roundtime = 0
+            status_line_contents['roundtime'] = current_roundtime
+
+            logging.info('current_roundtime: ' + str(current_roundtime))
+
+            # format the status line with the current content values
+            status_line_output = status_line_string.format(**status_line_contents)
+        
+            logging.info('status line!: ' + str(status_line_string))
+
+            # set thae status line
+            mainframe.contents[1][0].original_widget.set_text(status_line_output)
+
+
             # currently just smash up the tcp line history, but need to change that
             #view_lines_buffer.extend(tcp_lines)
             #tcp_lines.clear()
@@ -530,7 +635,6 @@ def urwid_main():
             # right now it just passes the current lines
             main_view_text = b'\n'.join(view_buffer)
 
-            
             # the contents object is a list of (widget, option) tuples
             # http://urwid.org/reference/widget.html#urwid.Pile
             mainframe.contents[0][0].original_widget.set_text(main_view_text)
@@ -568,9 +672,20 @@ def setup_game_connection(server_addr, server_port, key, frontend_settings):
     return gamesock
 
 
+def gametime_incrementer(global_game_state):
+    '''
+    '''
+    while True:
+        time.sleep(1)
+
+        # this is incremented since we only get gametime about every 5-20 seconds
+        global_game_state.time += 1
+
+
 if __name__ == '__main__':
     ''' Set up the connection and start the threads
     '''
+    global_game_state = GlobalGameState()
 
     tcp_lines = deque() # split the tcp buffer on '\r\n'
     player_lines = deque() # process the xml into a player log, which can also be a player view
@@ -587,6 +702,10 @@ if __name__ == '__main__':
     tcp_thread = threading.Thread(target=get_tcp_lines)
     tcp_thread.daemon = True #  closes when main thread ends
     tcp_thread.start()
+
+    gametime_thread = threading.Thread(target=gametime_incrementer, args=(global_game_state,))
+    gametime_thread.daemon = True #  closes when main thread ends
+    gametime_thread.start()
 
     # start the UI and UI refresh thread
     # urwid must have its own time.sleep somewhere in its loop, since it doesn't dominate everything
