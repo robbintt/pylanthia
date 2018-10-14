@@ -22,6 +22,32 @@ Provide many of the useful features, including scripting, of dragonrealms client
 1. Implement stream on death or whatever, depends on xml rewrite
 1. add the text stream highlight/alter and the text stream ignores
   - and text stream triggers?
+1. make it so a down arrow when at the end of the history gives a blank line
+
+
+## Release Plan
+
+1. How to announce releases? updates?
+  - How to poll for feature requests?
+  - 
+1. Clear Community Expectations
+  - Alpha, for programmers
+  - have a draft of the electron client??
+    - avoid getting scooped by another developer (unfortunate reality)
+1. Install guide
+  - detailed Lich Install
+  - OS Support
+    - Mac
+    - Linux
+    - Windows
+1. Lich documentation links in README
+1. Patreon Donations
+  - A la carte - Any number of characters $3/month (per account)
+  - Starving Artist - $5/month
+  - Unlimited Accounts - $12/month
+  - Support Open Source Clients - $25/month
+  - I need this to exist - $50/month
+  
 
 
 ## Finished
