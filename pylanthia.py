@@ -111,6 +111,7 @@ class GlobalGameState:
         self.reset_exits()
         self.command_history = list()
         self.command_queue = queue.Queue()
+        self.rt_command_queue = queue.Queue()
 
 
     def reset_exits(self):
@@ -145,6 +146,9 @@ def process_command_queue(global_game_state, tcp_lines):
     '''
     while True:
 
+        # this sleep throttles max command processing speed
+        time.sleep(COMMAND_PROCESS_SPEED)
+
         if not global_game_state.command_queue.empty():
             # maybe timestamped as its own output stream, so it can be turned off on certain windows
             submitted_command = global_game_state.command_queue.get()
@@ -154,9 +158,25 @@ def process_command_queue(global_game_state, tcp_lines):
             logging.info(submitted_command)
             global_game_state.command_history.append(submitted_command)
 
-        # this sleep throttles max command processing speed
-        time.sleep(COMMAND_PROCESS_SPEED)
+            continue # ensure this whole queue is processed before the rt_command_queue
 
+        # process the rt_command_queue exactly as if a player had submitted again
+        # but always process the most recent player command_queue before the rt_command_queue
+        # this might get caught in a little submit race with the server, how to prevent?
+        # basically if there's a 1 second server time offset this could get submitted 100 times
+        # this often catches itself after submitting 2 commands
+        # since this puts things on the end of the queue, it gets things out of order
+        # it's not really intended for long strings of commands, but still it would be unexpected
+        # the user would not predict that things would start rotating like that...
+        # it's complicated, the commands should have an implied order in their data structure
+        # then the queue can be sorted again after putting an item on the queue
+        # more info to inform the `command data structure`
+        if not global_game_state.rt_command_queue.empty():
+            current_roundtime = int(global_game_state.roundtime - global_game_state.time)
+            if current_roundtime == 0:
+                global_game_state.command_queue.put(global_game_state.rt_command_queue.get())
+                time.sleep(1) # just in case there's a submit issue
+                
 
 def preprocess_tcp_lines(tcp_lines, preprocessed_lines):
     ''' Process the TCP lines into labelled lines for the XML parser
@@ -521,7 +541,29 @@ def process_game_xml(preprocessed_lines, text_lines):
     # this may not be a hard and fast rule, mid-line XML might be a thing
     # if so update this control flow
     if op_line and op_line[0][0] != 'xml':
+
+        try:
+            # don't use this to trigger the command queue, use the global roundtime time
+            pattern_command_failed = r'\.\.\.wait ([0-9]+) seconds\.'
+            line = op_line[0][1].decode('utf-8')
+            # how costly is this? it should compile/cache the re string... 
+            # should we check the `...` string segment before testing the re?
+            # deal with later as necessary
+            command_failed = re.fullmatch(pattern_command_failed, line) 
+            # hopefully we can grab the last command
+            # you can imagine how this would fail if 2 commands were submitted back to back
+            # so it's not this simple, we need to be able to give commands some index
+            # but lets not YET add a bigger data structure for each command in the command history - YET
+            if command_failed:
+                failing_command = global_game_state.command_history.pop()
+                logging.info(b'Command failed from RT: ' + failing_command)
+                global_game_state.rt_command_queue.put(failing_command)
+        except Exception as e:
+            logging.info("failed: ", e)
+
+
         text_lines.put(op_line)
+
         return
 
 
@@ -725,6 +767,18 @@ def urwid_main():
         if key in ("down"):
             input_box.set_edit_text('')
             input_box.set_edit_pos(len(txt.edit_text))
+            return
+
+        if key in ("left"):
+            ''' 
+            would rather be able to move across the input fields with this
+            basically "set_edit_pos to one less than whatever it is"
+            for now lets use it to clear the rt_command_queue which needs a hotkey
+            '''
+            # need the mutex because this uses a function of the underlying deque
+            # see: https://stackoverflow.com/a/6518011
+            with global_game_state.rt_command_queue.mutex:
+                global_game_state.rt_command_queue.queue.clear()
             return
 
         if key in ("ctrl q", "ctrl Q"):
