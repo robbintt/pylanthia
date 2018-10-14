@@ -150,7 +150,6 @@ def process_lines(preprocessed_lines, player_lines):
     1. XML puller needs to be able to pull both XML and text lines (for multiline html text body)
 
 
-
     The DR output has some XML and some text.
     Sometimes a element stands alone, multiple elements per line. 
     Sometimes a element feeds into the next line.
@@ -176,19 +175,7 @@ def process_lines(preprocessed_lines, player_lines):
         # don't really need this check since Queue.get() is blocking by default
         # may want it to give a spinning wheel/timeout in the else
         if not preprocessed_lines.empty():
-
-            # blocking by default
-            line = preprocessed_lines.get()
-
-            # process xml in place, sometimes process_game_xml will need to hold the line until
-            # it gets enough lines for a particular multi-line XML element
-            # so that will be some sort of object?
-            # for now we are just processing single line XML with a function...
-            if line and line[0][0] == 'xml':
-                line = process_game_xml(line)
-
-            rebuilt_line = b''.join(x[1] for x in line)
-            player_lines.append(rebuilt_line)
+            process_game_xml(preprocessed_lines, text_lines)
         else:
             pass
 
@@ -197,7 +184,7 @@ def process_lines(preprocessed_lines, player_lines):
         time.sleep(BUF_PROCESS_SPEED)
 
 
-def process_game_xml(op_line):
+def process_game_xml(preprocessed_lines, text_lines):
     ''' Get any game state out of the XML, return a replacement line
 
     I think I'll need an empty line filter after this, since game state will often
@@ -210,13 +197,25 @@ def process_game_xml(op_line):
 
     The failure state (xml not processed) should leave the XML in the display, so the
     player can report the issue and work around it without missing an important detail.
+
+    is this relevant anymore?:
+        # use the same rebuilt_line code pattern from above
+        # the current text/xml chopper actually chops xml by tag... which ruins it
+        # commented rebuilt line for now bc we're individually pulling each op_line tag
+        # rebuilt_line = b''.join(x[1] for x in op_line)
+        # assign this for now so we don't have to rename the variable for testing
+
     '''
-   
-    # use the same rebuilt_line code pattern from above
-    # the current text/xml chopper actually chops xml by tag... which ruins it
-    # commented rebuilt line for now bc we're individually pulling each op_line tag
-    #rebuilt_line = b''.join(x[1] for x in op_line)
-    # assign this for now so we don't have to rename the variable for testing
+    # Queue.get() blocks by default
+    op_line = preprocessed_lines.get()
+
+    # don't process if it doesn't start with XML
+    # this may not be a hard and fast rule, mid-line XML might be a thing
+    # if so update this control flow
+    if op_line and op_line[0][0] != 'xml':
+        text_lines.put(op_line)
+        return
+        
 
     logging.info("RAW XML:" + repr(op_line))
     
@@ -324,12 +323,15 @@ def process_game_xml(op_line):
     #logging.info(b'xml parsed:' + rebuilt_line)
     #parser.feed(rebuilt_line)
 
-    # temporary, replace xml and inject 1 line
+
+    # this still only replaces the line, we want to put an arbitrary number of lines
+    # we also want to potentially NOT put the line, instead updating a UI element
     if modified_line:
-        return(modified_line)
+        text_lines.put(modified_line)
+    else:
+        text_lines.put(op_line)
 
-    return op_line
-
+    return
 
 
 def get_tcp_lines():
@@ -496,19 +498,45 @@ def urwid_main():
             # set thae status line
             mainframe.contents[1][0].original_widget.set_text(status_line_output)
 
+            # grab at most view_buffer_size lines per refresh
+            view_buffer_size = fixed_size_for_now
+            # i guess this needs its own buffer. maybe its own function
+            # it makes sense for the view contents constructor to be elsewhere anyways
+            i = 0
+            while i < view_buffer_size:
+                # careful this is blocking, if blocked we would want to just return what we have...
+                # and even return some stuff from the last buffer attempt too!
+                # hmm requires a little thinking!
+                # for now we could make it a list and grow it forever...
+                # then we can slice the last bit for the view again
+                try:
+                    new_line = text_lines.get_nowait()
+                    # temporarily rebuild player_lines for viewing
+                    new_line = b''.join([content for _, content in new_line])
+                    player_lines.append(new_line)
+                except queue.Empty:
+                    # return the player_lines when empty or 'full'/done
+                    break
+                i += 1
+
             # slice a view buffer off of player_lines
             # if the view buffer is too long, urwid currently cuts off the bottom, which is terrible... how to fix?
             # can we tap into the current height of the flow widget and give that as the view buffer size?
-            view_buffer_size = fixed_size_for_now
+            # think about it later..
             if len(player_lines) < view_buffer_size:
                 _min_slice = 0
             else:
                 _min_slice = len(player_lines) - view_buffer_size 
-
+            
+            # technique for slicing with a deque
             view_buffer = itertools.islice(player_lines, _min_slice, len(player_lines))
+            #view_buffer = player_lines[_min_slice:]
+
 
             # ideally a 4000 line buffer view of the current game would be updated elsewhere and just displayed here
+            # scrollable would also be really nice
             # right now it just passes the current lines
+            logging.info("VIEW BUFFER: " + repr(view_buffer))
             main_view_text = b'\n'.join(view_buffer)
 
             # the contents object is a list of (widget, option) tuples
@@ -565,6 +593,7 @@ if __name__ == '__main__':
 
     tcp_lines = queue.Queue() # split the tcp buffer on '\r\n'
     preprocessed_lines = queue.Queue()
+    text_lines = queue.Queue()
     player_lines = deque() # process the xml into a player log, which can also be a player view
     
     GAME_KEY = get_game_key(eaccess_host, eaccess_port, username, password)
@@ -576,7 +605,7 @@ if __name__ == '__main__':
     preprocess_lines_thread.daemon = True # closes when main thread ends
     preprocess_lines_thread.start()
 
-    process_lines_thread = threading.Thread(target=process_lines, args=(preprocessed_lines, player_lines))
+    process_lines_thread = threading.Thread(target=process_lines, args=(preprocessed_lines, text_lines))
     process_lines_thread.daemon = True # closes when main thread ends
     process_lines_thread.start()
 
