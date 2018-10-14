@@ -311,7 +311,7 @@ def get_tcp_lines():
     '''
     tcp_buffer = bytes()
     while True:
-        tcp_chunk = sock.recv(BUFSIZE)
+        tcp_chunk = gamesock.recv(BUFSIZE)
 
         # this is kind of a lot of writes...
         with open(tcplog_location, 'a') as f:
@@ -369,7 +369,7 @@ def urwid_main():
             txt.set_edit_pos(0)
 
             # not sure if sending this has a buffer? or is it lag in the receive side...
-            sock.sendall(submitted_command + b'\n')
+            gamesock.sendall(submitted_command + b'\n')
             if submitted_command in [b'exit', b'quit']:
                 raise Exception("Client has exited, use exception to cleanup for now.")
             return
@@ -441,36 +441,46 @@ def urwid_main():
     loop.run()
 
 
+def setup_game_connection(server_addr, server_port, server_login_token, frontend_settings):
+
+    gamesock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server = (server_addr, int(server_port))
+    gamesock.connect(server)
+
+    time.sleep(1) # would be better to get an ACK of some sort before sending the token...
+    gamesock.sendall(server_login_token)
+    gamesock.sendall(b'\n')
+    gamesock.sendall(frontend_settings)
+    gamesock.sendall(b'\n')
+
+    # needs a second to connect or else it hangs, then you need to send a newline or two...
+    time.sleep(1)
+    gamesock.sendall(b'\n')
+    gamesock.sendall(b'\n')
+
+    return gamesock
+
+
 if __name__ == '__main__':
     ''' Set up the connection and start the threads
     '''
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server = (server_addr, int(server_port))
-    sock.connect(server)
-
-    time.sleep(1) # would be better to get an ACK of some sort before sending the token...
-    sock.sendall(server_login_token)
-    sock.sendall(b'\n')
-    sock.sendall(frontend_setting)
-    sock.sendall(b'\n')
 
     tcp_lines = deque() # split the tcp buffer on '\r\n'
     player_lines = deque() # process the xml into a player log, which can also be a player view
 
-    # needs a second to connect or else it hangs, then you need to send a newline or two...
-    time.sleep(1)
-    sock.sendall(b'\n')
-    sock.sendall(b'\n')
+    # hopefully we can reuse this to reload the game if it breaks
+    gamesock = setup_game_connection(server_addr, server_port, server_login_token, frontend_settings)
 
     process_lines_thread = threading.Thread(target=process_lines, args=(tcp_lines, player_lines))
-    process_lines_thread.daemon = True # close with main thread
+    process_lines_thread.daemon = True # closes when main thread ends
     process_lines_thread.start()
 
     tcp_thread = threading.Thread(target=get_tcp_lines)
-    tcp_thread.daemon = True # close with main thread
+    tcp_thread.daemon = True #  closes when main thread ends
     tcp_thread.start()
 
     # start the UI and UI refresh thread
+    # urwid must have its own time.sleep somewhere in its loop, since it doesn't dominate everything
     urwid_main()
 
 
