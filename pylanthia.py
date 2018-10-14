@@ -85,6 +85,7 @@ import queue
 
 from config import *
 from eaccess import get_game_key
+from lib import chop_xml_and_text
 
 TCP_BUFFER_SLEEP = 0.01 # not sure if i want to sleep this or not
 SCREEN_REFRESH_SPEED = 0.1 # how fast to redraw the screen from the buffer
@@ -107,7 +108,6 @@ class GlobalGameState:
         self.time = 0
 
 
-
 # dump tcp separately
 tcplog_filename = "{}_tcplog.{}.txt".format('dr', datetime.datetime.now().strftime('%Y-%m-%d.%H:%M:%S'))
 tcplog_directory = "tcplogs"
@@ -119,73 +119,20 @@ if not os.path.exists(tcplog_location):
         f.write('')
 
 
-def chop_xml_and_text_from_line(line):
-    ''' Given a line chop it into xml and text sections
-
-    Currently used in process_lines
-
-    Note the xml is not real xml, for now we're parsing it manually.
-    Might consider just reforming it into xml and using lxml to parse attr:value pairs and content
-
-    return an ordered and parsed list of: [string value, xml or text?]
-    '''
-
-    # make a bunch of line segments
-    # note that line is a bytes() type, indexing line[i] returns int
-    # if we slice into it line[i:i+1] we get a bytes() type of length 1
-    xml_free_line_part = b''
-    xml_line_part = b''
-    op_line = list() # give an ordered and parsed list of: [string value, xml or text?]
-    i = 0 
-    while i < len(line):
-
-        if line[i:i+1] != b'<':
-            xml_free_line_part += line[i:i+1]
-
-        # found some xml
-        else:
-
-            # store the text segment
-            if xml_free_line_part:
-                op_line.append(['text', xml_free_line_part]) # modify these in place later, sometimes
-                #logging.info(b'text parsed: ' + xml_free_line_part)
-                xml_free_line_part = b'' # reset the xml_free_line_part
-
-            # increment until you get out of the xml tag or out of the line
-            while i < len(line) and line[i:i+1] != b'>':
-                xml_line_part += line[i:i+1]
-                i += 1
-
-            # toss the last b'>' on the end!
-            xml_line_part += line[i:i+1]
-
-            # store the xml part off
-            op_line.append(['xml', xml_line_part]) # modify these in place later, sometimes
-            #logging.info(b'xml parsed: ' + xml_line_part)
-            xml_line_part = b'' # reset the xml part
-
-        i += 1 # covers incrementing past the '>' and incrementing if not yet in a '<'
-
-
-    # store any final text segment
-    if xml_free_line_part:
-        op_line.append(['text', xml_free_line_part]) # modify these in place later, sometimes
-        #logging.info(b'text parsed: ' + xml_free_line_part)
-        xml_free_line_part = b'' # reset the xml_free_line_part
-
-    return op_line
-
-
 def preprocess_tcp_lines(tcp_lines, preprocessed_lines):
     ''' Process the TCP lines into labelled lines for the XML parser
 
-    This runs in its own thread
+    This parsing runs in its own thread
     '''
     while True:
 
-        # only process a line if one exists, this is blocking by default
+        # only process a line if one exists
+        # don't really need this check since Queue.get() is blocking by default
+        # may want it to give a spinning wheel/timeout in the else
         if not tcp_lines.empty():
-            preprocessed_lines.put(chop_xml_and_text_from_line(tcp_lines.get()))
+            preprocessed_lines.put(chop_xml_and_text.chop_xml_and_text_from_line(tcp_lines.get()))
+        else:
+            pass
 
         # this sleep throttles max line processing speed
         time.sleep(BUF_PROCESS_SPEED)
@@ -226,11 +173,11 @@ def process_lines(preprocessed_lines, player_lines):
     while True:
 
         # only process a line if one exists
+        # don't really need this check since Queue.get() is blocking by default
+        # may want it to give a spinning wheel/timeout in the else
         if not preprocessed_lines.empty():
 
-            # if the line disappears this will block until another is ready
-            # this is the only consumer of tcp_lines, so this is not noteworthy
-            # but this is already written, so enjoy.
+            # blocking by default
             line = preprocessed_lines.get()
 
             # process xml in place, sometimes process_game_xml will need to hold the line until
@@ -243,7 +190,6 @@ def process_lines(preprocessed_lines, player_lines):
             rebuilt_line = b''.join(x[1] for x in line)
             player_lines.append(rebuilt_line)
         else:
-            # if there are no lines, maybe give a spinning wheel or a timeout
             pass
 
         # this sleep throttles max line processing speed
