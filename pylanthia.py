@@ -32,6 +32,9 @@ import logging
 import os
 
 
+SCREEN_REFRESH_SPEED = 0.1 # how fast to redraw the screen from the buffer
+BUFSIZE = 16 # This seems to give a better response time than 128 bytes
+
 # set up logging into one place for now
 log_filename = "{}_log.{}.txt".format('dr', datetime.datetime.now().strftime('%Y-%m-%d.%H:%M:%S'))
 log_directory = "logs"
@@ -58,12 +61,6 @@ tcplog_handler = logging.FileHandler(file_name)
 root_logger = logging.getLogger()
 root_logger.addHandler(tcplog_handler)
 '''
-
-
-
-
-
-BUFSIZE = 16 # This seems to give a better response time than 128 bytes
 
 
 def filter_lines(view_lines):
@@ -204,7 +201,6 @@ def urwid_main():
         handle_mouse=False,
         unhandled_input=lambda key: unhandled_input(input_box, key))
 
-    REFRESH_SPEED = 0.1
     def refresh_screen(loop, user_data=None):
         view_lines_buffer = list() # a buffer of lines sent to the terminal
         while True:
@@ -212,7 +208,7 @@ def urwid_main():
             # is there a data flag on loop we can pause until is True (loop.run() started)
 
             # do this first so that loop exists! otherwise too fast
-            time.sleep(REFRESH_SPEED)
+            time.sleep(SCREEN_REFRESH_SPEED)
 
             # the contents object is a list of (widget, option) tuples
             # http://urwid.org/reference/widget.html#urwid.Pile
@@ -226,16 +222,10 @@ def urwid_main():
             loop.draw_screen()
 
 
-    # alternative approach to stick refresh in a thread ourselves
+    # refresh the screen in its own thread.
     refresh = threading.Thread(target=refresh_screen, args=(loop,))
-    refresh.daemon = True # daemon mode
+    refresh.daemon = True # kill the thread if the process dies
     refresh.start()
-
-    # alarm callback: https://stackoverflow.com/questions/12044463/urwid-doesnt-update-screen-on-loop-draw-screen
-    # i think this takes over in this thread which ruins what i am doing
-    # i guess this calls the callback function, refresh_screen, in another thread
-    # this doesn't work because it clogs up the main thread
-    #loop.set_alarm_in(REFRESH_SPEED, refresh_screen)
 
     loop.run()
 
@@ -265,21 +255,5 @@ if __name__ == '__main__':
 
     urwid_main()
 
-
-    '''
-    # pass this between a bunch of threads
-    increasing_text = list()
-
-    def grow_text():
-        i = 0
-        while True:
-            increasing_text.append(str(i)+'\n')
-            import time; time.sleep(1)
-            i += 1
-
-    t = threading.Thread(target=grow_text)
-    t.daemon = True # daemon threads die when non-daemon/main thread exits
-    t.start()
-    '''
 
 

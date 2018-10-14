@@ -18,6 +18,8 @@ Provide many of the useful features, including scripting, of dragonrealms client
 
 ## Socket and Stream Handling
 
+The socket by default uses `\r\n` carriage returns, which look like `^M` and a newline in vim.
+
 It might be a good idea to find a library for handling tcp instead of doing it myself.
 
 This isn't my core problem though, so maybe do this later.  What I have works.
