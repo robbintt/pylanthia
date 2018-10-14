@@ -365,6 +365,8 @@ def urwid_main():
     arrows['sw'] = 'sw'
     arrows['se'] = 'se'
 
+    status_line_string = '[ RT:  5 ]' + '[ ' + ' '.join([v for k, v in arrows.items()]) + ' ]'
+
     # imagine a function that adds a space or the arrow depending on
     # whether the compass arrow last received game state
     # currently just used to display them all as a placeholder
@@ -374,7 +376,9 @@ def urwid_main():
     fixed_size_for_now = 30
     main_window = urwid.Text('') # initalize the window empty
     input_box = urwid_readline.ReadlineEdit('> ', '') # pretty sure urwid_readline package needs Python3
-    status_line = urwid.Text('[RT: 5]' + '[ ' + ' '.join([v for k, v in arrows.items()]) + ' ]')
+
+    status_line = urwid.Text(status_line_string)
+
     mainframe = urwid.Pile([
         ('weight', fixed_size_for_now, urwid.Filler(main_window, valign='bottom')),
         ('fixed', 1, urwid.Filler(status_line, 'bottom')),
