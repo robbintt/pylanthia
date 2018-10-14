@@ -1,0 +1,15 @@
+
+*.swp
+
+*.pyc
+*.pyo
+__pycache__/
+
+env/
+env3/
+
+data/
+logs/
+
+
+config.py
