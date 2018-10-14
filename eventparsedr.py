@@ -64,6 +64,10 @@ if __name__ == '__main__':
             print_events(parser)
             import time; time.sleep(1)
         else:
+            # so far this is only <d> tags and <a> links in the game copy...
+            # i think <d> tags are monster bold. we can parse them elsewhere
+            if '<' in line:
+                print("THE LINE HAS XML IN THE MIDDLE:")
             print("text line=", line)
 
     '''
