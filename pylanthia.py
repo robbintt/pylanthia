@@ -217,11 +217,27 @@ def process_game_xml(preprocessed_lines, text_lines):
         return
         
 
-    logging.info("RAW XML:" + repr(op_line))
-    
-    modified_line = ''
     def parse_events(parser, root_element, still_parsing):
-        ''' quick and dirty, show the time events
+        ''' When an element ends, determine what to do
+
+        these functions govern what is put in the text_lines Queue
+        e.g. text_lines.put(whatever)
+
+        A lot of data is given to the user by XML - store it in game state object
+            - quick health
+            - roundtime
+            - inventory? some...
+            - room contents
+            - assess
+
+
+        scenarios:
+        1. For certain xml root tags, we want to grab multiline
+            - which elements? we need a catalog
+        2. For others, we just want part of the line
+            - this is the default, just stop when you have the tag
+
+
         '''
         
         for action, elem in parser.read_events():
@@ -236,7 +252,8 @@ def process_game_xml(preprocessed_lines, text_lines):
 
             # lets see some stuff temporarily
             if action == 'end':
-                logging.info("Element processed (action = end):" + elem.tag)
+                #logging.info("Element processed (action = end):" + elem.tag)
+                pass
 
 
             for e in elem.iter():
@@ -289,11 +306,7 @@ def process_game_xml(preprocessed_lines, text_lines):
                 def prompt(attrib):
                     '''
                     '''
-                    #logging.info("prompt 'time': " + repr(attrib))
-                    #modified_line = ('text', 'THE TIME IS:', e.attrib.get('time'))
-                    #logging.info('** TIME ** ' + e.attrib.get('time'))
-                    #logging.info(modified_line)
-
+                    # if they forget time, then we don't update the state
                     if e.attrib.get('time'):
                         global_game_state.time = int(e.attrib.get('time'))
                     return
@@ -316,7 +329,6 @@ def process_game_xml(preprocessed_lines, text_lines):
                     pass
 
 
-
         return root_element, still_parsing
 
 
@@ -330,11 +342,11 @@ def process_game_xml(preprocessed_lines, text_lines):
 
         line = op_line[linenum]
         # this should only log root elements
-        logging.info('root element?? should be! :' + repr(line))
+        #logging.info('root element?? should be! :' + repr(line))
         # only feed the line if it starts with xml... is this universally true?
         if line[0] == 'xml' and line[1]:
 
-            logging.info('now build a parser for xml line content only:' + repr(line[1]))
+            #logging.info('now build a parser for xml line content only:' + repr(line[1]))
 
             parser = etree.XMLPullParser(events, recover=True) # we don't want to raise errors
             
@@ -358,24 +370,13 @@ def process_game_xml(preprocessed_lines, text_lines):
                 # avoid double increment in parent while loop
                 if still_parsing:
                     linenum += 1
-            else:
-                logging.info("The final parsed XML output:" + repr(parser))
-
 
             #parser.close() # i think i need to do this... read up
 
         linenum += 1
 
-    #logging.info(b'xml parsed:' + rebuilt_line)
-    #parser.feed(rebuilt_line)
-
-
-    # this still only replaces the line, we want to put an arbitrary number of lines
-    # we also want to potentially NOT put the line, instead updating a UI element
-    if modified_line:
-        text_lines.put(modified_line)
-    else:
-        text_lines.put(op_line)
+    # for now put all xml lines
+    text_lines.put(op_line)
 
     return
 
