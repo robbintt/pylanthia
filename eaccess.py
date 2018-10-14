@@ -48,20 +48,34 @@ def get_game_key(host, port, username, password):
     # really hashed_password should already be convertible to bytes() because it is a seq of ints
     # consider moving all this processing to a bytearray for simplicity
     hashed_password = bytes(hashed_password)
+
+    def get_login_key(username, hashed_password):
     
-    # get a login key
-    sock.sendall(b'A\t' + username + b'\t' + hashed_password + b'\n') # request a key
-    tcp_buffer = bytes()
-    while b'\n' not in tcp_buffer:
-        tcp_buffer += sock.recv(64)
+        # get a login key
+        sock.sendall(b'A\t' + username + b'\t' + hashed_password + b'\n') # request a key
+        tcp_buffer = bytes()
+        while b'\n' not in tcp_buffer:
+            tcp_buffer += sock.recv(64)
 
-    response, _sep, _tail = tcp_buffer.partition(b'\n')
+        response, _sep, _tail = tcp_buffer.partition(b'\n')
 
-    print(b'this response should have the string \\tKEY\\t in it: ' + response)
+        response_parts = response.split(b'\t')
+        print(response_parts, len(response_parts))
 
-    response_parts = response.split(b'\t')
+        return response_parts
 
-    print(response_parts)
+
+    tries = 3
+    while tries > 0:
+        response_parts = get_login_key(username, hashed_password)
+        if len(response_parts) == 5:
+            break
+        else:
+            tries -= 1
+            time.sleep(1)
+    else:
+        raise(Exception("Login key attempt failed 3 times!"))
+
 
     if response_parts[0] != b'A':
         print('Not well formed!:', response_parts)

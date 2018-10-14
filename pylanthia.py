@@ -319,13 +319,15 @@ def parse_events(parser, root_element, still_parsing):
                         text_lines.put('text', elem.tail)
                 if elem.attrib['id'] == 'percWindow':
                     pass
+                if elem.attrib['id'] == 'thoughts':
+                    pass
                 # catchall for elements WITH 'id' attr
                 else:
-                    text_lines.put((('text', etree.tostring(e)),)) # tostring is making a bytes string
+                    text_lines.put((('text', bytes(elem.tag, 'ascii') + etree.tostring(e)),)) # tostring is making a bytes string
 
             # catchall
             else:
-                text_lines.put((('text', etree.tostring(e)),)) # tostring is making a bytes string
+                text_lines.put((('text', bytes(elem.tag, 'ascii') + etree.tostring(e)),)) # tostring is making a bytes string
 
             return
 
@@ -361,13 +363,13 @@ def parse_events(parser, root_element, still_parsing):
                     text_lines.put(('text', elem.text,))
                 #attrib == id catchall
                 else:
-                    text_lines.put(('text', etree.tostring(elem),)) # tostring is making a bytes string
+                    text_lines.put((('text', etree.tostring(elem)),)) # tostring is making a bytes string
 
             # catchall
             else:
-                text_lines.put(('text', etree.tostring(elem),)) # tostring is making a bytes string
-
+                text_lines.put((('text', etree.tostring(elem)),)) # tostring is making a bytes string
             return
+
 
         def dialogData(elem):
             '''
@@ -382,16 +384,33 @@ def parse_events(parser, root_element, still_parsing):
             # catchall
             else:
                 text_lines.put((('text', etree.tostring(elem)),)) # tostring is making a bytes string
+            return
+
 
         def style(elem):
             '''
             '''
-            if elem.attrib.get('DERP'):
+            if elem.attrib.get('id'):
+                if elem.attrib['id'] == 'roomName':
+                    pass
+                if elem.attrib['id'] == '':
+                    pass
+
+            # catchall
+            else:
+                text_lines.put((('text', etree.tostring(elem)),)) # tostring is making a bytes string
+            return
+
+        def resource(elem):
+            '''
+            '''
+            if elem.attrib.get('picture'):
                 pass
 
             # catchall
             else:
                 text_lines.put((('text', etree.tostring(elem)),)) # tostring is making a bytes string
+            return
 
 
         # you would use if statements on the attribs inside
@@ -401,6 +420,7 @@ def parse_events(parser, root_element, still_parsing):
                         'popStream' : popStream,
                         'compass' : compass,
                         'component' : component,
+                        'resource' : resource,
                         #'preset' : preset,
                         'style' : style,
                         'dialogData' : dialogData,
@@ -426,8 +446,8 @@ def parse_events(parser, root_element, still_parsing):
             # even though the xml feeder is still correctly feeding it inside the parent
             # intentionally still passing: popBold
             # for now: put all xml lines not in xml_actions
-            logging.info(b"xml failed to parse: " + etree.tostring(e))
-            text_lines.put((('text', etree.tostring(e)),)) # tostring is making a bytes string
+            logging.info(b"xml failed to parse " + etree.tostring(e))
+            text_lines.put((('text', b'RAW:' + etree.tostring(e)),)) # tostring is making a bytes string
             # we could do something custom here, like log the missing xml_action for later use
             pass
 
@@ -648,12 +668,6 @@ def urwid_main():
         ''' why is this called unhandled input if it is the input handler??
         '''
 
-        # not working for some reason
-        if key in ("ctrl enter"):
-            input_box.set_edit_text(global_game_state.command_history[-1])
-            input_box.set_edit_pos(len(txt.edit_text))
-            return
-
         if key in ("enter"):
 
             if len(txt.edit_text) == 0:
@@ -680,7 +694,8 @@ def urwid_main():
             return
 
         if key in ("up"):
-            input_box.set_edit_text(global_game_state.command_history[-1])
+            if len(command_history) > 0:
+                input_box.set_edit_text(global_game_state.command_history[-1])
             input_box.set_edit_pos(len(txt.edit_text))
             return
 
