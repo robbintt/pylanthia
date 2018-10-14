@@ -90,6 +90,7 @@ from lib import chop_xml_and_text
 TCP_BUFFER_SLEEP = 0.01 # not sure if i want to sleep this or not
 SCREEN_REFRESH_SPEED = 0.1 # how fast to redraw the screen from the buffer
 BUF_PROCESS_SPEED = 0.01 # this is a timer for the buffer view creation thread
+COMMAND_PROCESS_SPEED = 0.01 # this is a timer for the buffer view creation thread
 BUFSIZE = 16 # This seems to give a better response time than 128 bytes
 
 # set up logging into one place for now
@@ -109,6 +110,7 @@ class GlobalGameState:
         self.exits = dict()
         self.reset_exits()
         self.command_history = list()
+        self.command_queue = queue.Queue()
 
 
     def reset_exits(self):
@@ -132,6 +134,28 @@ tcplog_location = os.path.join(log_directory, tcplog_directory, tcplog_filename)
 if not os.path.exists(tcplog_location):
     with open(tcplog_location, 'w') as f:
         f.write('')
+
+
+def process_command_queue(global_game_state, tcp_lines):
+    ''' process game commands from the submit queue
+
+    need some hotkey to dump the queue
+
+    don't process for n seconds if you got the response: "...wait 1 seconds."
+    '''
+    while True:
+
+        if not global_game_state.command_queue.empty():
+            # maybe timestamped as its own output stream, so it can be turned off on certain windows
+            submitted_command = global_game_state.command_queue.get()
+
+            gamesock.sendall(submitted_command + b'\n')
+            tcp_lines.put(b'> ' + submitted_command)
+            logging.info(submitted_command)
+            global_game_state.command_history.append(submitted_command)
+
+        # this sleep throttles max command processing speed
+        time.sleep(COMMAND_PROCESS_SPEED)
 
 
 def preprocess_tcp_lines(tcp_lines, preprocessed_lines):
@@ -669,12 +693,6 @@ def urwid_main():
     def quit(*args, **kwargs):
         raise urwid.ExitMainLoop()
 
-    '''
-    def handle_key(key):
-        if key in ('q', 'Q'):
-            quit()
-    '''
-    
 
     def unhandled_input(txt, key):
         ''' why is this called unhandled input if it is the input handler??
@@ -689,18 +707,11 @@ def urwid_main():
             
             # this really should be in some 'handled_input' function or something
             submitted_command = bytes(txt.edit_text, "utf-8")
-            global_game_state.command_history.append(submitted_command)
-            logging.info(submitted_command)
-
-            # maybe timestamped as its own output stream, so it can be turned off on certain windows
-            # this should actually go in player lines, not muddy up the tcp input...
-            tcp_lines.put(b'> ' + submitted_command)
+            global_game_state.command_queue.put(submitted_command)
 
             txt.set_edit_text('')
             txt.set_edit_pos(0)
 
-            # not sure if sending this has a buffer? or is it lag in the receive side...
-            gamesock.sendall(submitted_command + b'\n')
             if submitted_command in [b'exit', b'quit']:
                 raise Exception('Client has exited, use exception to cleanup for now.')
             return
@@ -886,6 +897,10 @@ if __name__ == '__main__':
     tcp_thread = threading.Thread(target=get_tcp_lines)
     tcp_thread.daemon = True #  closes when main thread ends
     tcp_thread.start()
+
+    command_queue_thread = threading.Thread(target=process_command_queue, args=(global_game_state, tcp_lines))
+    command_queue_thread.daemon = True #  closes when main thread ends
+    command_queue_thread.start()
 
     gametime_thread = threading.Thread(target=gametime_incrementer, args=(global_game_state,))
     gametime_thread.daemon = True #  closes when main thread ends
