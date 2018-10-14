@@ -268,7 +268,10 @@ def parse_events(parser, root_element, still_parsing):
                 return
 
             def pushStream(elem):
-                ''' xml element is not used
+                ''' 
+                this xml element needs to grab more lines until it finds <popStream/>
+                notably used for streamWindow / id='inv' on startup
+
                 '''
                 logging.info("pushStream: " + repr(elem.attrib))
 
