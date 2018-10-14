@@ -30,12 +30,25 @@ Processing steps before player sees lines:
         - substring search, potential for regex search
         - a line can be colored or just the substring/regex section of the string
         - need conversion of hex colors downscaled for terminal? mapping?
+        - customize background and foreground color, per-character basis
     5. need persistent data structure to store 'ignore filters' and 'color filters'
         - SQLite or flat config file
         - maybe a flat config file at first so it can be configured outside the game
         - ability to hot reload the flat config
         - how will a player use filters to create new streams?
             - this is a killer feature
+
+
+TCP Lines:
+    - tcp lines are logged by appending to a file
+
+Display lines:
+    - player display lines should be displayed and logged after all processing
+    - processing could all occur in the same thread?
+    - Where are display lines consumed?
+        - urwid loop thread
+        - logging method?
+
 
 
 
@@ -166,11 +179,20 @@ def chop_xml_and_text_from_line(line):
 
 
 def process_lines(tcp_lines, player_lines):
-    ''' process the deque of tcp lines back to front, works in a separate thread
+    ''' process tcp lines back to front, works in a separate thread
 
-    need thread safety on: tcp_line and player_line (both collections.deque type)
-    player_line will also be written to a file and only 4000 lines will stay in the buffer
-    tcp_line will also be written to as it is parsed from the tcp_buffer
+    This function takes raw TCP lines and delivers annotated XML elements and text segments
+    Sometimes a element stands alone, multiple elements per line. Sometimes a tag feeds into the next line.
+    
+
+    The DR output has some XML and some text.
+
+    Sometimes XML output is multiline.
+    Sometimes multiple XML structures are added on the same line.
+
+    Goal:
+    We need to be able to split a single line of multiple XML documents up.
+    We also need to detect when multiple lines are one XML document.
 
     processing the xml-style tokens is weird
         ex. inventory streamWindow - primes inventory, but there are still more indicators...
@@ -180,19 +202,6 @@ def process_lines(tcp_lines, player_lines):
     a ton of tokens are duplicate and can just be dropped
     ''' 
     
-    def tcp_buffering():
-        ''' wait for another line, sleep is the same as the tcp buffer thread
-        '''
-        while tcp_lines.empty():
-            time.sleep(BUF_PROCESS_SPEED)
-
-    ''' 
-    all this multiline processing seems to be causing some slowness
-    it's probably because it's a cludgy trash way of doing things
-    nonetheless, it might be nice to pass these partial strings to the renderer...
-    but i really don't think it's necessary, i think this logic just needs smoothed out
-    '''
-
     while True:
 
         # only process a line if one exists
