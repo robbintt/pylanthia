@@ -53,6 +53,7 @@ if __name__ == '__main__':
         for action, elem in parser.read_events():
             print("feed={}: {}, tag: {}".format(action, elem, elem.tag))
 
+    # https://lxml.de/parsing.html#event-types (hmm)
     # https://lxml.de/parsing.html#incremental-event-parsing
     # what if i do each line as a feed, and if it doesn't end, then it chews some more...
     for line in raw_lines:
