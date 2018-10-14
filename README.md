@@ -18,6 +18,10 @@ Provide many of the useful features, including scripting, of dragonrealms client
 1. rewrite the xml to use .text and .tail for text
   - any line that starts with xml is xml, no more xml splitting
   - any line that starts with text is text
+1. band-aid on 'say' and 'whisper' xml parsing (can't see who is talking)
+1. Implement stream on death or whatever, depends on xml rewrite
+1. add the text stream highlight/alter and the text stream ignores
+  - and text stream triggers?
 
 
 ## Finished

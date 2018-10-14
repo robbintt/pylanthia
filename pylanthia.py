@@ -408,7 +408,8 @@ def parse_events(parser, root_element, still_parsing):
             if elem.attrib.get('id'):
                 DEBUG_PREFIX = bytes(elem.tag, 'ascii') + b':' + bytes(elem.attrib['id'], 'ascii') + b': '
                 if elem.attrib['id'] == 'speech':
-                    #text_lines.put(('text', elem.text,))
+                    if elem.text:
+                        text_lines.put((('text', bytes(elem.text, 'utf-8')),))
                     pass
                 elif elem.attrib['id'] == 'roomDesc':
                     logging.info(b"room text: " + etree.tostring(elem))

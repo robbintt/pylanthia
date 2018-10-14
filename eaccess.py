@@ -65,7 +65,8 @@ def get_game_key(host, port, username, password):
         return response_parts
 
 
-    tries = 3
+    # doesn't work, need to restart the whole eaccess connection
+    tries = 1
     while tries > 0:
         response_parts = get_login_key(username, hashed_password)
         if len(response_parts) == 5:
