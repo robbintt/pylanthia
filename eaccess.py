@@ -72,7 +72,7 @@ def get_game_key(host, port, username, password):
             break
         else:
             tries -= 1
-            time.sleep(1)
+            time.sleep(3)
     else:
         raise(Exception("Login key attempt failed 3 times!"))
 

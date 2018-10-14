@@ -314,20 +314,22 @@ def parse_events(parser, root_element, still_parsing):
             notably used for streamWindow / id='inv' on startup
             '''
             if elem.attrib.get('id'):
+                DEBUG_PREFIX = bytes(elem.tag, 'ascii') + b':' + bytes(elem.attrib['id'], 'ascii') + b': '
+
                 if elem.attrib['id'] == 'logons':
                     if elem.tail:
                         text_lines.put('text', elem.tail)
-                if elem.attrib['id'] == 'percWindow':
+                elif elem.attrib['id'] == 'percWindow':
                     pass
-                if elem.attrib['id'] == 'thoughts':
+                elif elem.attrib['id'] == 'thoughts':
                     pass
                 # catchall for elements WITH 'id' attr
                 else:
-                    text_lines.put((('text', bytes(elem.tag, 'ascii') + etree.tostring(e)),)) # tostring is making a bytes string
+                    text_lines.put((('text', DEBUG_PREFIX + etree.tostring(e)),)) # tostring is making a bytes string
 
             # catchall
             else:
-                text_lines.put((('text', bytes(elem.tag, 'ascii') + etree.tostring(e)),)) # tostring is making a bytes string
+                text_lines.put((('text', + etree.tostring(e)),)) # tostring is making a bytes string
 
             return
 
@@ -357,17 +359,18 @@ def parse_events(parser, root_element, still_parsing):
             '''
             '''
             if elem.attrib.get('id'):
+                DEBUG_PREFIX = bytes(elem.tag, 'ascii') + b':' + bytes(elem.attrib['id'], 'ascii') + b': '
                 if elem.attrib['id'] == 'speech':
                     text_lines.put(('text', elem.text,))
                 elif elem.attrib['id'] == 'roomDesc':
-                    text_lines.put(('text', elem.text,))
+                    text_lines.put(('text', b'ROOM: ' + elem.text,))
                 #attrib == id catchall
                 else:
-                    text_lines.put((('text', etree.tostring(elem)),)) # tostring is making a bytes string
+                    text_lines.put((('text', DEBUG_PREFIX + etree.tostring(elem)),)) # tostring is making a bytes string
 
             # catchall
             else:
-                text_lines.put((('text', etree.tostring(elem)),)) # tostring is making a bytes string
+                text_lines.put((('text', b'preset no id:' + etree.tostring(elem)),)) # tostring is making a bytes string
             return
 
 
@@ -398,7 +401,7 @@ def parse_events(parser, root_element, still_parsing):
 
             # catchall
             else:
-                text_lines.put((('text', etree.tostring(elem)),)) # tostring is making a bytes string
+                text_lines.put((('text', b'style: ' + etree.tostring(elem)),)) # tostring is making a bytes string
             return
 
         def resource(elem):
@@ -453,7 +456,7 @@ def parse_events(parser, root_element, still_parsing):
 
         # is this universally true?
         if e.tail:
-            text_lines.put((('text', e.tail.encode('utf-8')),))
+            text_lines.put((('text', 'tail: ' + e.tail.encode('utf-8')),))
 
 
     return root_element, still_parsing
@@ -694,7 +697,7 @@ def urwid_main():
             return
 
         if key in ("up"):
-            if len(command_history) > 0:
+            if len(global_game_state.command_history) > 0:
                 input_box.set_edit_text(global_game_state.command_history[-1])
             input_box.set_edit_pos(len(txt.edit_text))
             return
