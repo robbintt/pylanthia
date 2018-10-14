@@ -70,6 +70,13 @@ Provide many of the useful features, including scripting, of dragonrealms client
 - `pip install -r requirements.txt`
 
 
+## Simulating windows
+
+I can grep tails of the tcp log for various reasons.
+
+- To grep the whole log then continue grepping the tail: `tail -f -n +1 log.log | grep "stuff"`
+    - Can write regexes now for these text streams, to some degree.
+
 ## XML Extraction, Parsing, Management
 
 Some data is stored within XML tags, some data is stored between XML tags, as expected.
