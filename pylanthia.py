@@ -1,4 +1,17 @@
-'''
+''' A terminal-based python client for dragonrealms
+
+The client is implemented with socket and urwid.
+
+Global variables may not yet be locked properly for threading,
+especially when appending sent text to the stream.
+
+There is some confusion about how much information newlines from the
+server actually hold. The server does not seem to provide newlines between
+consecutive xml tags so some data needs to be extracted from the stream
+
+The stream can also be logged directly and replayed in order to test certain behavior.
+This is probably the best place to start.
+
 '''
 import socket
 import threading
@@ -28,15 +41,6 @@ logging.basicConfig(filename=log_location, level=logging.INFO)
 
 BUFSIZE = 32 # adjust based on actual data for dr buffers
 
-EXCLUDES = [
-    r'<prompt.*>',
-    r'</prompt.*>',
-]
-
-SUBS = [
-    (r'<.*>', ''),
-]
-
 
 def filter_lines(view_lines):
     ''' this was temporary and needs rebuilt with some terminal editable filter
@@ -46,18 +50,27 @@ def filter_lines(view_lines):
     good use for file or sqlite database... file is nice as users can share, can call a reload function
     '''
 
-    excludes = ['<prompt time="']
 
     # this still doesn't work because we need to filter xml above the line level
     # do newlines from the server ever contain meaningful data or are they pointless?
     # is all the newline data given by a terminating xml-type tag?
 
     # filter lines that start with an exclude string - non-regex
+    excludes = ['<prompt time="']
     for exclude in excludes:
         view_lines = [line for line in view_lines if line[0:len(exclude)] != exclude]
 
 
     '''
+    EXCLUDES = [
+        r'<prompt.*>',
+        r'</prompt.*>',
+    ]
+
+    SUBS = [
+        (r'<.*>', ''),
+    ]
+
     # drop empty lines before the regex to save processing
     # what about lines with whitespace only...
     view_lines = [line for line in view_lines if line != b'' or line != b'&gt']
@@ -75,23 +88,6 @@ def filter_lines(view_lines):
     return view_lines
 
 
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server = (server_addr, int(server_port))
-sock.connect(server)
-
-time.sleep(1) # would be better to get an ACK of some sort before sending the token...
-sock.sendall(server_login_token)
-sock.sendall(b'\n')
-sock.sendall(frontend_setting)
-sock.sendall(b'\n')
-
-tcp_lines = deque()
-new_tcp_lines = True
-
-# needs a second to connect or else it hangs, then you need to send a newline or two...
-time.sleep(1)
-sock.sendall(b'\n')
-sock.sendall(b'\n')
 
 def get_tcp_lines():
     ''' receive text and xml into a buffer and split on newlines
@@ -107,29 +103,12 @@ def get_tcp_lines():
         else:
             new_tcp_lines = False
 
-tcp_thread = threading.Thread(target=get_tcp_lines)
-tcp_thread.daemon = True # close with main thread
-tcp_thread.start()
 
 
-'''
-# pass this between a bunch of threads
-increasing_text = list()
 
-def grow_text():
-    i = 0
-    while True:
-        increasing_text.append(str(i)+'\n')
-        import time; time.sleep(1)
-        i += 1
-
-t = threading.Thread(target=grow_text)
-t.daemon = True # daemon threads die when non-daemon/main thread exits
-t.start()
-'''
-
-
-def main():
+def urwid_main():
+    ''' just the main process for urwid... needs renamed and fixed up
+    '''
 
     # wrap the top text widget with a flow widget like Filler: https://github.com/urwid/urwid/wiki/FAQ
     main_window = urwid.Text('\r\n'.join(tcp_lines))
@@ -229,4 +208,45 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server = (server_addr, int(server_port))
+    sock.connect(server)
+
+    time.sleep(1) # would be better to get an ACK of some sort before sending the token...
+    sock.sendall(server_login_token)
+    sock.sendall(b'\n')
+    sock.sendall(frontend_setting)
+    sock.sendall(b'\n')
+
+    tcp_lines = deque()
+    new_tcp_lines = True
+
+    # needs a second to connect or else it hangs, then you need to send a newline or two...
+    time.sleep(1)
+    sock.sendall(b'\n')
+    sock.sendall(b'\n')
+
+    tcp_thread = threading.Thread(target=get_tcp_lines)
+    tcp_thread.daemon = True # close with main thread
+    tcp_thread.start()
+
+    urwid_main()
+
+
+    '''
+    # pass this between a bunch of threads
+    increasing_text = list()
+
+    def grow_text():
+        i = 0
+        while True:
+            increasing_text.append(str(i)+'\n')
+            import time; time.sleep(1)
+            i += 1
+
+    t = threading.Thread(target=grow_text)
+    t.daemon = True # daemon threads die when non-daemon/main thread exits
+    t.start()
+    '''
+
+
