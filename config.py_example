@@ -30,3 +30,14 @@ frontend_settings = b"/FE:STORMFRONT /VERSION:1.0.1.26 /P:WIN_XP /XML"
 server_addr = "storm.dr.game.play.net"
 server_port = "11024"
 
+
+#
+# for eaccess (token generation)
+#
+
+eaccess_host = 'eaccess.play.net'
+eaccess_port = '7900'
+
+username = b'user'
+password = b'pass'
+
