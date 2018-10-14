@@ -228,8 +228,15 @@ def parse_events(parser, root_element, still_parsing):
         if root_element is None:
             root_element = elem
 
+        # fix this up
+        if elem != root_element:
+           continue
+
         # end parsing when the root element closes
+        # what about if there's a tail?
         if action == 'end' and elem is root_element:
+
+            # i could check for a text tail here??
             still_parsing = False
 
         # lets see some stuff temporarily
@@ -237,149 +244,196 @@ def parse_events(parser, root_element, still_parsing):
             #logging.info("Element processed (action = end):" + elem.tag)
             pass
 
+        e = elem
+        # i think i just want to hit the element now, i will iter inside the function if necessary
+        #        for e in elem.iter():
+        #            ''' iterate over element and all descendants in tree
+        #
+        #            i can do this without the tag and do actions based on the tag below to parse
+        #            all xml... not sure if this is managing <standalone\> elements properly...
+        #
+        #            use a dict of functions or something here
+        #                - do i need to check tag name and attrib dict?
+        #            
+        #            # in this case the functions still need to handle the attrib dict
+        #            xml_actions = { 'popBold' : function1,
+        #                            'prompt'  : function2 }
+        #
+        #            
+        #            '''
 
-        for e in elem.iter():
-            ''' iterate over element and all descendants in tree
+        def compass(elem):
+            ''' get all the dirs inside this
 
-            i can do this without the tag and do actions based on the tag below to parse
-            all xml... not sure if this is managing <standalone\> elements properly...
+            <compass><dir value="n"/><dir value="e"/><dir value="se"/></compass>
 
-            use a dict of functions or something here
-                - do i need to check tag name and attrib dict?
-            
-            # in this case the functions still need to handle the attrib dict
-            xml_actions = { 'popBold' : function1,
-                            'prompt'  : function2 }
-
-            
+            seems like the xml parser is processing the children seperately too
             '''
-            # not yet used // just an idea
-            class XMLActions():
-                ''' better as a dict or class
+            global_game_state.reset_exits()
+            for direction in elem.iterchildren('dir'):
+                if direction.attrib.get('value'):
+                    if direction.attrib.get('value') in list(global_game_state.exits.keys()):
+                        global_game_state.exits[direction.attrib.get('value')] = True
 
-                i do like the strings as keys
+            return
 
-                dot notation is not as if loading the xml->control flow
-                from a database since it's a string anyways
 
-                especially if i store the xml in a sqlite database
-                '''
-                def __init__(self):
+        def component(elem):
+            ''' needs thought through
+            '''
+            if elem.attrib.get('id'):
+                if elem.attrib['id'] == 'exp':
                     pass
 
-            xml_actions_object = XMLActions()
-
-
-            def compass(elem):
-                ''' get all the dirs inside this
-
-                <compass><dir value="n"/><dir value="e"/><dir value="se"/></compass>
-
-                seems like the xml parser is processing the children seperately too
-                '''
-                global_game_state.reset_exits()
-                logging.info(global_game_state.exits)
-                for direction in elem.iterchildren('dir'):
-                    if direction.attrib.get('value'):
-                        if direction.attrib.get('value') in list(global_game_state.exits.keys()):
-                            global_game_state.exits[direction.attrib.get('value')] = True
-                logging.info(global_game_state.exits)
-
-                return
-
-
-            def component(elem):
-                ''' needs thought through
-                '''
-                if elem.attrib.get('id'):
-                    if elem.attrib[id] == 'exp':
-                        pass
-            
-            def popBold(elem):
-                ''' xml element is not used
-                '''
-                logging.info("popBold: " + repr(elem.attrib))
-                return
-
-            def popStream(elem):
-                ''' xml element is not used
-                '''
-                logging.info("popStream: " + repr(elem.attrib))
-                return
-
-            def pushStream(elem):
-                ''' 
-                this xml element needs to grab more lines until it finds <popStream/>
-                notably used for streamWindow / id='inv' on startup
-
-                '''
-                logging.info("pushStream: " + repr(elem.attrib))
-
-                if elem.attrib.get('id'):
-                    if elem.attrib[id] == 'logons':
-                        if elem.tail:
-                            text_lines.put('text', elem.tail)
-
-                return
-
-            def clearStream(elem):
-                ''' xml element is not used
-                '''
-                logging.info("clearStream: " + repr(elem.attrib))
-                return
-
-            def roundTime(elem):
-                '''
-                '''
-                logging.info("roundTime: " + repr(elem.attrib))
-                # if they forget roundTime 'value', then we don't update the state
-                if elem.attrib.get('value'):
-                    global_game_state.roundtime = int(elem.attrib.get('value'))
-                return
-
-            def prompt(elem):
-                '''
-                '''
-                # if they forget time, then we don't update the state
-                if elem.attrib.get('time'):
-                    global_game_state.time = int(elem.attrib.get('time'))
-                return
-
-                
-
-            # you would use if statements on the attribs inside
-            # attribs can always be passed as elem.attrib in this format
-            xml_actions = { 'roundTime'  : roundTime,
-                            'prompt'  : prompt,
-                            'popStream' : popStream,
-                            'compass' : compass,
-                            # if i enable pushstream then it eats up the rest of the input
-                            # this is just one example of how i need to redo the xml parsing
-                            #'pushStream' : pushStream,
-                            #'clearStream' : clearStream,
-                            'popBold' : popBold }
-
-            # run the function at e.tag
-            # if there isn't a tag just skip it... 
-            if xml_actions.get(e.tag, None):
-                logging.info("found function for {}: {}".format(e.tag, xml_actions[e.tag]))
-                try:
-                    xml_actions[e.tag](e)
-                # we need to globally handle exceptions gracefully without crashing
-                # i think this raise will eventually pass the exception up to the handler
-                except Exception as exc:
-                    raise exc
+            # catchall
             else:
-                # intentionally still passing: popBold
-                # for now: put all xml lines not in xml_actions
-                logging.info(type(etree.tostring(e)))
+                text_lines.put((('text', etree.tostring(elem)),)) # tostring is making a bytes string
+                text_lines.put((('text', elem.text),)) # tostring is making a bytes string
+
+        def pushBold(elem):
+            ''' change this line to a color preset, can hardcode for now
+            '''
+            text_lines.put((('text', etree.tostring(e)),)) # tostring is making a bytes string
+            return
+        
+        def popBold(elem):
+            ''' xml element is not used
+            '''
+            logging.info("popBold: " + repr(elem.attrib))
+            return
+
+        def popStream(elem):
+            ''' xml element is not used
+            '''
+            logging.info("popStream: " + repr(elem.attrib))
+            return
+
+        def pushStream(elem):
+            ''' 
+            this xml element needs to grab more lines until it finds <popStream/>
+            notably used for streamWindow / id='inv' on startup
+            '''
+            if elem.attrib.get('id'):
+                if elem.attrib['id'] == 'logons':
+                    if elem.tail:
+                        text_lines.put('text', elem.tail)
+                if elem.attrib['id'] == 'percWindow':
+                    pass
+                # catchall for elements WITH 'id' attr
+                else:
+                    text_lines.put((('text', etree.tostring(e)),)) # tostring is making a bytes string
+
+            # catchall
+            else:
                 text_lines.put((('text', etree.tostring(e)),)) # tostring is making a bytes string
-                # we could do something custom here, like log the missing xml_action for later use
+
+            return
+
+        def clearStream(elem):
+            ''' xml element is not used
+            '''
+            #text_lines.put((('text', etree.tostring(elem)),)) # tostring is making a bytes string
+            return
+
+        def roundTime(elem):
+            '''
+            '''
+            # if they forget roundTime 'value', then we don't update the state
+            if elem.attrib.get('value'):
+                global_game_state.roundtime = int(elem.attrib.get('value'))
+            return
+
+        def prompt(elem):
+            '''
+            '''
+            # if they forget time, then we don't update the state
+            if elem.attrib.get('time'):
+                global_game_state.time = int(elem.attrib.get('time'))
+            return
+
+        def preset(elem):
+            '''
+            '''
+            if elem.attrib.get('id'):
+                if elem.attrib['id'] == 'speech':
+                    text_lines.put(('text', elem.text,))
+                elif elem.attrib['id'] == 'roomDesc':
+                    text_lines.put(('text', elem.text,))
+                #attrib == id catchall
+                else:
+                    text_lines.put(('text', etree.tostring(elem),)) # tostring is making a bytes string
+
+            # catchall
+            else:
+                text_lines.put(('text', etree.tostring(elem),)) # tostring is making a bytes string
+
+            return
+
+        def dialogData(elem):
+            '''
+            '''
+            if elem.attrib.get('id'):
+                if elem.attrib['id'] == 'minivitals':
+                    pass
+                #attrib == id catchall
+                else:
+                    text_lines.put((('text', etree.tostring(elem)),)) # tostring is making a bytes string
+
+            # catchall
+            else:
+                text_lines.put((('text', etree.tostring(elem)),)) # tostring is making a bytes string
+
+        def style(elem):
+            '''
+            '''
+            if elem.attrib.get('DERP'):
                 pass
 
-            # is this universally true?
-            if e.tail:
-                text_lines.put((('text', e.tail.encode('utf-8')),))
+            # catchall
+            else:
+                text_lines.put((('text', etree.tostring(elem)),)) # tostring is making a bytes string
+
+
+        # you would use if statements on the attribs inside
+        # attribs can always be passed as elem.attrib in this format
+        xml_actions = { 'roundTime'  : roundTime,
+                        'prompt'  : prompt,
+                        'popStream' : popStream,
+                        'compass' : compass,
+                        'component' : component,
+                        #'preset' : preset,
+                        'style' : style,
+                        'dialogData' : dialogData,
+                        # if i enable pushstream then it eats up the rest of the input
+                        # this is just one example of how i need to redo the xml parsing
+                        'pushStream' : pushStream,
+                        'clearStream' : clearStream,
+                        'popBold' : popBold,
+                        'pushBold' : pushBold }
+
+        # run the function at e.tag
+        # if there isn't a tag just skip it... 
+        if xml_actions.get(e.tag, None):
+            logging.info("found function for {}: {}".format(e.tag, xml_actions[e.tag]))
+            try:
+                xml_actions[e.tag](e)
+            # we need to globally handle exceptions gracefully without crashing
+            # i think this raise will eventually pass the exception up to the handler
+            except Exception as exc:
+                raise exc
+        else:
+            # interestingly, this is still getting child xml to parse...
+            # even though the xml feeder is still correctly feeding it inside the parent
+            # intentionally still passing: popBold
+            # for now: put all xml lines not in xml_actions
+            logging.info(b"xml failed to parse: " + etree.tostring(e))
+            text_lines.put((('text', etree.tostring(e)),)) # tostring is making a bytes string
+            # we could do something custom here, like log the missing xml_action for later use
+            pass
+
+        # is this universally true?
+        if e.tail:
+            text_lines.put((('text', e.tail.encode('utf-8')),))
 
 
     return root_element, still_parsing
@@ -593,7 +647,20 @@ def urwid_main():
     def unhandled_input(txt, key):
         ''' why is this called unhandled input if it is the input handler??
         '''
+
+        # not working for some reason
+        if key in ("ctrl enter"):
+            input_box.set_edit_text(global_game_state.command_history[-1])
+            input_box.set_edit_pos(len(txt.edit_text))
+            return
+
         if key in ("enter"):
+
+            if len(txt.edit_text) == 0:
+                ''' ignore an empty command
+                '''
+                return
+            
             # this really should be in some 'handled_input' function or something
             submitted_command = bytes(txt.edit_text, "utf-8")
             global_game_state.command_history.append(submitted_command)
