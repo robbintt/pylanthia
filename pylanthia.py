@@ -109,7 +109,8 @@ class GlobalGameState:
         self.time = 0
         self.exits = dict()
         self.reset_exits()
-        self.command_history = list()
+        self.command_history = queue.LifoQueue() # sometimes rt_command_queue takes back the last in
+        self.input_history = list()
         self.command_queue = queue.Queue()
         self.rt_command_queue = queue.Queue()
 
@@ -156,7 +157,7 @@ def process_command_queue(global_game_state, tcp_lines):
             gamesock.sendall(submitted_command + b'\n')
             tcp_lines.put(b'> ' + submitted_command)
             logging.info(submitted_command)
-            global_game_state.command_history.append(submitted_command)
+            global_game_state.command_history.put(submitted_command)
 
             continue # ensure this whole queue is processed before the rt_command_queue
 
@@ -555,7 +556,7 @@ def process_game_xml(preprocessed_lines, text_lines):
             # so it's not this simple, we need to be able to give commands some index
             # but lets not YET add a bigger data structure for each command in the command history - YET
             if command_failed:
-                failing_command = global_game_state.command_history.pop()
+                failing_command = global_game_state.command_history.get()
                 logging.info(b'Command failed from RT: ' + failing_command)
                 global_game_state.rt_command_queue.put(failing_command)
         except Exception as e:
@@ -747,20 +748,28 @@ def urwid_main():
                 '''
                 return
             
-            # this really should be in some 'handled_input' function or something
-            submitted_command = bytes(txt.edit_text, "utf-8")
-            global_game_state.command_queue.put(submitted_command)
+            submitted_command = txt.edit_text
+
+            # allow multiple commands per line
+            # this doesn't work for command history
+            # maybe there should be an input history
+            global_game_state.input_history.append(submitted_command)
+            submitted_commands = submitted_command.split(';')
+            for _s_c in submitted_commands:
+                if len(_s_c) > 0:
+                    _s_c = bytes(_s_c, "utf-8")
+                    global_game_state.command_queue.put(_s_c)
 
             txt.set_edit_text('')
             txt.set_edit_pos(0)
 
-            if submitted_command in [b'exit', b'quit']:
+            if submitted_command in ['exit', 'quit']:
                 raise Exception('Client has exited, use exception to cleanup for now.')
             return
 
         if key in ("up"):
-            if len(global_game_state.command_history) > 0:
-                input_box.set_edit_text(global_game_state.command_history[-1])
+            if len(global_game_state.input_history) > 0:
+                input_box.set_edit_text(global_game_state.input_history[-1])
             input_box.set_edit_pos(len(txt.edit_text))
             return
 
