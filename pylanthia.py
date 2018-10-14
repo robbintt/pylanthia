@@ -90,7 +90,7 @@ from lib import chop_xml_and_text
 TCP_BUFFER_SLEEP = 0.01 # not sure if i want to sleep this or not
 SCREEN_REFRESH_SPEED = 0.1 # how fast to redraw the screen from the buffer
 BUF_PROCESS_SPEED = 0.01 # this is a timer for the buffer view creation thread
-COMMAND_PROCESS_SPEED = 0.1 # max speed that commands are submitted at
+COMMAND_PROCESS_SPEED = 0.3 # max speed that commands are submitted at
 BUFSIZE = 16 # This seems to give a better response time than 128 bytes
 
 # set up logging into one place for now
@@ -364,12 +364,12 @@ def parse_events(parser, root_element, still_parsing):
             if elem.attrib.get('id'):
                 DEBUG_PREFIX = bytes(elem.tag, 'ascii') + b':' + bytes(elem.attrib['id'], 'ascii') + b': '
 
-                if elem.attrib['id'] == 'logons':
+                if elem.attrib['id'] in ('logons', 'atmospherics'):
                     if elem.tail:
                         text_lines.put('text', elem.tail)
                 elif elem.attrib['id'] == 'percWindow':
                     pass
-                elif elem.attrib['id'] == 'thoughts':
+                elif elem.attrib['id'] in ('talk', 'whispers', 'thoughts'):
                     pass
                 # catchall for elements WITH 'id' attr
                 else:
