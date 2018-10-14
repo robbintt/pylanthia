@@ -29,11 +29,14 @@ import urwid
 import urwid_readline
 
 from collections import deque
+from itertools import islice
+
 from config import *
 
 
 
 SCREEN_REFRESH_SPEED = 0.1 # how fast to redraw the screen from the buffer
+BUF_PROCESS_SPEED = 0.01 # this is a timer for the buffer view creation thread
 BUFSIZE = 16 # This seems to give a better response time than 128 bytes
 
 # set up logging into one place for now
@@ -64,12 +67,40 @@ root_logger.addHandler(tcplog_handler)
 '''
 
 
+
+def process_lines(tcp_lines, player_lines):
+    ''' process the deque of tcp lines back to front
+
+    call this function in a thread
+
+    need thread safety on: tcp_line and player_line
+
+    player_line will also be written to a file and only 4000 lines will stay in the buffer
+    tcp_line will also be written to as it is parsed from the tcp_buffer
+    ''' 
+
+    while True:
+        if tcp_lines:
+
+            current_line = tcp_lines.popleft()
+            # lets just put this in a thread to start
+            player_lines.append(current_line)
+        else:
+            # if there are no lines, maybe give a spinning wheel or a timeout
+            pass
+
+        # not sure an ideal sleep for this thread, maybe event based...
+        time.sleep(BUF_PROCESS_SPEED)
+
+
 def filter_lines(view_lines):
-    ''' this was temporary and needs rebuilt with some terminal editable filter
+    ''' retired function with some ideas and features needed in a user-accessible filter tool
 
     would be good to be able to add filters, view filters by index, and delete filters
 
     good use for file or sqlite database... file is nice as users can share, can call a reload function
+
+    the functionality here can be moved, if some other filter_lines exists, the context will be different
     '''
 
 
@@ -218,12 +249,10 @@ def get_tcp_lines():
         tcp_buffer += tcp_chunk
 
         if b'\n' in tcp_buffer:
-            new_tcp_lines = True # maybe trigger the refresh here...
             tcp_lines.extend(tcp_buffer.split(b'\r\n'))
             tcp_buffer = tcp_lines.pop() # leave the last line, it's normally not cooked
             logging.info("tcp lines processed: {}".format(len(tcp_buffer)))
         else:
-            new_tcp_lines = False
             logging.info("tcp line has no newline: {}".format(tcp_buffer))
 
 
@@ -232,8 +261,9 @@ def urwid_main():
     '''
 
     # wrap the top text widget with a flow widget like Filler: https://github.com/urwid/urwid/wiki/FAQ
-    main_window = urwid.Text('\r\n'.join(tcp_lines))
-    input_box = urwid_readline.ReadlineEdit('> ', '') # pretty sure this needs Python3
+    #main_window = urwid.Text('\r\n'.join(tcp_lines))
+    main_window = urwid.Text('') # initalize the window empty
+    input_box = urwid_readline.ReadlineEdit('> ', '') # pretty sure urwid_readline package needs Python3
     mainframe = urwid.Pile([
         ('weight', 70, urwid.Filler(main_window, valign='bottom')),
         ('fixed', 1, urwid.Filler(input_box, 'bottom')),
@@ -294,29 +324,44 @@ def urwid_main():
         handle_mouse=False,
         unhandled_input=lambda key: unhandled_input(input_box, key))
 
-    def refresh_screen(loop, user_data=None):
-        view_lines_buffer = list() # a buffer of lines sent to the terminal
+    def refresh_screen(loop, player_lines):
+        #view_lines_buffer = list() # a buffer of lines sent to the terminal
         while True:
             # ideally we could just check if loop is running
             # is there a data flag on loop we can pause until is True (loop.run() started)
 
-            # do this first so that loop exists! otherwise too fast
+            # do this first so that the urwid MainLoop 'loop' exists! otherwise too fast
+            # it would be better to kick this off inside loop.run I think
             time.sleep(SCREEN_REFRESH_SPEED)
 
-            # the contents object is a list of (widget, option) tuples
-            # http://urwid.org/reference/widget.html#urwid.Pile
 
             # currently just smash up the tcp line history, but need to change that
-            view_lines_buffer.extend(tcp_lines)
-            tcp_lines.clear()
-            mainframe.contents[0][0].original_widget.set_text(
-                    b'\n'.join(filter_lines(view_lines_buffer[-50:])))
+            #view_lines_buffer.extend(tcp_lines)
+            #tcp_lines.clear()
+
+            # slice a view buffer off of player_lines
+            view_buffer_size = 50
+            if len(player_lines) < view_buffer_size:
+                _min_slice = 0
+            else:
+                _min_slice = len(player_lines) - view_buffer_size 
+
+            view_buffer = itertools.islice(player_lines, _min_slice, len(player_lines))
+
+            # ideally a 4000 line buffer view of the current game would be updated elsewhere and just displayed here
+            # right now it just passes the current lines
+            main_view_text = b'\n'.join(view_buffer)
+
+            
+            # the contents object is a list of (widget, option) tuples
+            # http://urwid.org/reference/widget.html#urwid.Pile
+            mainframe.contents[0][0].original_widget.set_text(main_view_text)
 
             loop.draw_screen()
 
 
     # refresh the screen in its own thread.
-    refresh = threading.Thread(target=refresh_screen, args=(loop,))
+    refresh = threading.Thread(target=refresh_screen, args=(loop, player_lines))
     refresh.daemon = True # kill the thread if the process dies
     refresh.start()
 
@@ -324,6 +369,8 @@ def urwid_main():
 
 
 if __name__ == '__main__':
+    ''' Set up the connection and start the threads
+    '''
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server = (server_addr, int(server_port))
     sock.connect(server)
@@ -334,18 +381,23 @@ if __name__ == '__main__':
     sock.sendall(frontend_setting)
     sock.sendall(b'\n')
 
-    tcp_lines = deque() # would it be better to remove the newlines? ugh
-    new_tcp_lines = True
+    tcp_lines = deque() # split the tcp buffer on '\r\n'
+    player_lines = deque() # process the xml into a player log, which can also be a player view
 
     # needs a second to connect or else it hangs, then you need to send a newline or two...
     time.sleep(1)
     sock.sendall(b'\n')
     sock.sendall(b'\n')
 
+    process_lines_thread = threading.Thread(target=process_lines, args=(tcp_lines, player_lines))
+    process_lines_thread.daemon = True # close with main thread
+    process_lines_thread.start()
+
     tcp_thread = threading.Thread(target=get_tcp_lines)
     tcp_thread.daemon = True # close with main thread
     tcp_thread.start()
 
+    # start the UI and UI refresh thread
     urwid_main()
 
 
