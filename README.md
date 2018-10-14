@@ -16,6 +16,17 @@ Provide many of the useful features, including scripting, of dragonrealms client
 - `pip install -r requirements.txt`
 
 
+## XML Extraction, Parsing, Management
+
+Some data is stored within XML tags, some data is stored between XML tags, as expected.
+
+Some updates that are pushed like room and inventory will need to grab text streams starting when a XML tag is parsed off and ending when its closing tag is parsed off.
+
+Some updates like time, can start on a newline or can have the first tag on a previous line, I think.
+
+So how do we snag text for particular xml tags?
+
+
 ## Socket and Stream Handling
 
 The socket by default uses `\r\n` carriage returns, which look like `^M` and a newline in vim.
