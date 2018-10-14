@@ -43,6 +43,9 @@ This isn't my core problem though, so maybe do this later.  What I have works.
 
 Here is some info about implementing a client: https://www.reddit.com/r/dragonrealms/comments/4e0e3h/host_name_and_port_number/
 
+EAccess Protocol (get a token from user/pass): http://warlockclient.wikia.com/wiki/EAccess_Protocol
+
+More eaccess (aka SGE Protocol): https://gswiki.play.net/SGE_protocol/saved_posts
 
 stormfront protocol (warlock): http://warlockclient.wikia.com/wiki/StormFront_Protocol
 
