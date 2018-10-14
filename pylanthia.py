@@ -90,7 +90,7 @@ from lib import chop_xml_and_text
 TCP_BUFFER_SLEEP = 0.01 # not sure if i want to sleep this or not
 SCREEN_REFRESH_SPEED = 0.1 # how fast to redraw the screen from the buffer
 BUF_PROCESS_SPEED = 0.01 # this is a timer for the buffer view creation thread
-COMMAND_PROCESS_SPEED = 0.01 # this is a timer for the buffer view creation thread
+COMMAND_PROCESS_SPEED = 0.1 # max speed that commands are submitted at
 BUFSIZE = 16 # This seems to give a better response time than 128 bytes
 
 # set up logging into one place for now
@@ -178,7 +178,8 @@ def process_command_queue(global_game_state, tcp_lines):
             current_roundtime = int(global_game_state.roundtime - global_game_state.time)
             if current_roundtime == 0:
                 global_game_state.command_queue.put(global_game_state.rt_command_queue.get())
-                time.sleep(1) # just in case there's a submit issue
+                # try without this with a higher command process speed
+                #time.sleep(1) # just in case there's a submit issue
                 
 
 def preprocess_tcp_lines(tcp_lines, preprocessed_lines):
@@ -380,6 +381,22 @@ def parse_events(parser, root_element, still_parsing):
 
             return
 
+
+        def streamWindow(elem):
+            ''' room and other stuff
+            '''
+
+            if elem.attrib.get('id'):
+                if elem.attrib['id'] == 'room':
+                    text_lines.put((('text', bytes(elem.attrib['title'] + elem.attrib['subtitle'], 'ascii')),))
+
+            # catchall
+            else:
+                text_lines.put((('text', b'pushStream: ' + etree.tostring(elem)),)) # tostring is making a bytes string
+
+            return
+
+
         def clearStream(elem):
             ''' xml element is not used
             '''
@@ -486,6 +503,7 @@ def parse_events(parser, root_element, still_parsing):
                         # if i enable pushstream then it eats up the rest of the input
                         # this is just one example of how i need to redo the xml parsing
                         'pushStream' : pushStream,
+                        'streamWindow' : streamWindow,
                         'clearStream' : clearStream,
                         'popBold' : popBold,
                         'pushBold' : pushBold }
