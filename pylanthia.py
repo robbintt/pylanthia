@@ -106,6 +106,20 @@ class GlobalGameState:
         '''
         self.roundtime = 0
         self.time = 0
+        self.exits = dict()
+        self.reset_exits()
+
+
+    def reset_exits(self):
+        self.exits = { 'n': False,
+                       's': False,
+                       'e': False,
+                       'w': False,
+                       'nw': False,
+                       'ne': False,
+                       'sw': False,
+                       'se': False }
+        return
 
 
 # dump tcp separately
@@ -254,6 +268,31 @@ def parse_events(parser, root_element, still_parsing):
 
             xml_actions_object = XMLActions()
 
+
+            def compass(elem):
+                ''' get all the dirs inside this
+
+                <compass><dir value="n"/><dir value="e"/><dir value="se"/></compass>
+
+                seems like the xml parser is processing the children seperately too
+                '''
+                global_game_state.reset_exits()
+                logging.info(global_game_state.exits)
+                for direction in elem.iterchildren('dir'):
+                    if direction.attrib.get('value'):
+                        if direction.attrib.get('value') in list(global_game_state.exits.keys()):
+                            global_game_state.exits[direction.attrib.get('value')] = True
+                logging.info(global_game_state.exits)
+
+                return
+
+
+            def component(elem):
+                ''' needs thought through
+                '''
+                if elem.attrib.get('id'):
+                    if elem.attrib[id] == 'exp':
+                        pass
             
             def popBold(elem):
                 ''' xml element is not used
@@ -278,7 +317,7 @@ def parse_events(parser, root_element, still_parsing):
                 if elem.attrib.get('id'):
                     if elem.attrib[id] == 'logons':
                         if elem.tail:
-                            text_lines.put(elem.tail)
+                            text_lines.put('text', elem.tail)
 
                 return
 
@@ -312,6 +351,7 @@ def parse_events(parser, root_element, still_parsing):
             xml_actions = { 'roundTime'  : roundTime,
                             'prompt'  : prompt,
                             'popStream' : popStream,
+                            'compass' : compass,
                             # if i enable pushstream then it eats up the rest of the input
                             # this is just one example of how i need to redo the xml parsing
                             #'pushStream' : pushStream,
@@ -322,7 +362,10 @@ def parse_events(parser, root_element, still_parsing):
             # if there isn't a tag just skip it... 
             if xml_actions.get(e.tag, None):
                 logging.info("found function for {}: {}".format(e.tag, xml_actions[e.tag]))
-                xml_actions[e.tag](e)
+                try:
+                    xml_actions[e.tag](e)
+                except Exception as exc:
+                    raise exc
             else:
                 # intentionally still passing: popBold
                 # for now: put all xml lines not in xml_actions
