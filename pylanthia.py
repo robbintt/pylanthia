@@ -111,6 +111,8 @@ class GlobalGameState:
         self.reset_exits()
         self.command_history = queue.LifoQueue() # sometimes rt_command_queue takes back the last in
         self.input_history = list()
+        self.input_history_count = 0 # must be set when used by history_scroll_mode
+        self.history_scroll_mode = False  # true while scrolling history
         self.command_queue = queue.Queue()
         self.rt_command_queue = queue.Queue()
 
@@ -743,6 +745,8 @@ def urwid_main():
 
         if key in ("enter"):
 
+            global_game_state.history_scroll_mode = False  # toggle history scroll mode off
+
             if len(txt.edit_text) == 0:
                 ''' ignore an empty command
                 '''
@@ -767,18 +771,38 @@ def urwid_main():
                 raise Exception('Client has exited, use exception to cleanup for now.')
             return
 
-        if key in ("up"):
-            if len(global_game_state.input_history) > 0:
-                input_box.set_edit_text(global_game_state.input_history[-1])
-            input_box.set_edit_pos(len(txt.edit_text))
-            return
+        if key in ("up", "down"):
 
-        if key in ("down"):
-            input_box.set_edit_text('')
+            # deal with the 0 history case here
+            if len(global_game_state.input_history) == 0:
+                return
+
+            # enter history scroll mode until the user presses enter
+            if global_game_state.history_scroll_mode == False:
+                global_game_state.history_scroll_mode = True
+                global_game_state.input_history_counter = len(global_game_state.input_history) - 1
+
+            # don't do this if you just set it to true! (elif)
+            elif global_game_state.history_scroll_mode == True:
+
+                if key in ("up"):
+                    if global_game_state.input_history_counter > 0:
+                        global_game_state.input_history_counter -= 1
+
+                if key in ("down"):
+                    if global_game_state.input_history_counter < len(global_game_state.input_history) - 1:
+                        global_game_state.input_history_counter += 1
+
+            input_box.set_edit_text(global_game_state.input_history[global_game_state.input_history_counter])
             input_box.set_edit_pos(len(txt.edit_text))
             return
 
         if key in ("left"):
+            input_box.set_edit_text('')
+            input_box.set_edit_pos(len(txt.edit_text))
+            return
+
+        if key in ("right"):
             ''' 
             interestingly, because of urwid-readline, i can use right and left arrows
             but only when there is already text on the line, and not on the far edges

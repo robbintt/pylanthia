@@ -8,6 +8,25 @@ A terminal-based dragonrealms client in Python.
 Provide many of the useful features, including scripting, of dragonrealms clients, in a terminal.
 
 
+## Current Plans
+
+1. How do I change focus in urwid and scroll the history? 
+  - Can I do it with a hotkey? Maybe pageup/pagedown?
+1. Clean up exit so it looks right
+  - What is the exception cleaning up for me? Do I need to exit the socket?
+1. Get all threads handling exceptions into the logging log.
+1. rewrite the xml to use .text and .tail for text
+  - any line that starts with xml is xml, no more xml splitting
+  - any line that starts with text is text
+
+
+## Finished
+
+1. Scoll `up` and `down` command history would be nice
+  - `left` could clear the line
+  - `right` would clear the `rt_command_queue`
+
+
 ## Quickstart: Python 3 Environment with `virtualenv`
 
 - install Python 3
