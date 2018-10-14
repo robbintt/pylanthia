@@ -1,0 +1,144 @@
+
+            # this needs generalized to feed xml strings that trigger stuff into a different
+            # data structure in order to alter UI elements. Maybe a different deque here
+            # and a thread that manages a data structure that informs the UI.
+            # STILL NEED to do the multiline XML+string+XML example... *** URGENT
+            j = 0
+            while j < len(op_line):
+                segment = op_line[j]
+
+                #<compass><dir value="n"/><dir value="e"/><dir value="w"/></compass>>
+
+                # parse style before room description
+                # no buffering needed
+                if segment[1].startswith(b'<style id=""/>'):
+
+                    # wipe some xml for now - later trigger event from this?
+                    logging.info(b'killing style tag for room description:' + segment[1])
+                    segment[1] = b''
+                    op_line[j] = segment
+
+                    # wipe the preset tag too
+                    j += 1
+                    segment = op_line[j]
+                    # escape the single quotes since this will be packed into a dynamic structure
+                    logging.info(b'killing <preset id=\'roomDesc\'>' + segment[1])
+                    segment[1] = b''
+                    op_line[j] = segment
+                
+
+                # parse: '<resource picture'
+                # no buffering needed
+                if segment[1].startswith(b'<resource picture'):
+
+                    # wipe some xml for now - later trigger event from this?
+                    logging.info(b'killing resource picture:' + segment[1])
+                    segment[1] = b''
+                    op_line[j] = segment
+
+                    j += 1
+                    segment = op_line[j]
+                    logging.info(b'killing style tag for <resource picture: ' + segment[1])
+                    segment[1] = b''
+                    op_line[j] = segment
+
+
+                # parse: <pushStream id="death"/>
+                elif segment[1].startswith(b'<pushStream id="death"/>'):
+
+                    # wipe some xml for now - later trigger event from this?
+                    logging.info(b'killing pushStream for death: ' + segment[1])
+                    segment[1] = b''
+                    op_line[j] = segment
+
+                    # drop death text for now - later push it to another place: window/deque?
+                    j += 1
+                    segment = op_line[j]
+                    logging.info(b'deleting death text: ' + segment[1])
+                    op_line[j] = ['text', b'>\n']
+
+                    # gotta get a new line...
+                    tcp_buffering() # wait for at least 1 tcp line to exist
+                    op_line.extend(chop_xml_and_text_from_line(tcp_lines.popleft()))
+
+                    j += 1
+                    segment = op_line[j]
+                    logging.info(b'killing popStream for death: ' + segment[1])
+                    segment[1] = b''
+                    op_line[j] = segment
+
+                # parse: '<clearStream id="percWindow"/>' '<pushStream id="percWindow"/>' and popstream
+                elif segment[1].startswith(b'<clearStream id="percWindow"/>'):
+
+                    # wipe some xml for now - later trigger event from this?
+                    logging.info(b'killing clearStream for percWindow: ' + segment[1])
+                    segment[1] = b''
+                    op_line[j] = segment
+
+                    tcp_buffering() # wait for at least 1 tcp line to exist
+                    op_line.extend(chop_xml_and_text_from_line(tcp_lines.popleft()))
+
+                    # wipe some xml for now - later trigger event from this?
+                    logging.info(b'killing pushStream for percWindow: ' + segment[1])
+                    segment[1] = b''
+                    op_line[j] = segment
+
+                    tcp_buffering() # wait for at least 1 tcp line to exist
+                    op_line.extend(chop_xml_and_text_from_line(tcp_lines.popleft()))
+
+                    j += 1
+                    segment = op_line[j]
+                    logging.info(b'killing popStream for percWindow: ' + segment[1])
+                    segment[1] = b''
+                    op_line[j] = segment
+
+                # parse 2: prompt time 
+                # use an elif here since j has not yet been incremented
+                elif segment[1].startswith(b'<prompt time="'):
+
+                    # wipe some xml for now - later trigger event from this?
+                    logging.info(b'killing prompt_time: ' + segment[1])
+                    segment[1] = b''
+                    op_line[j] = segment
+
+                    # detect the prompt and replace with a > as text segment
+                    # it would be unsafe to rerun this text to find xml
+                    j += 1
+                    segment = op_line[j]
+                    logging.info(b'replacing &gt; on prompt_text: ' + segment[1])
+                    op_line[j] = ['text', b'>\n']
+
+
+                    tcp_buffering() # wait for at least 1 tcp line to exist
+                    op_line.extend(chop_xml_and_text_from_line(tcp_lines.popleft()))
+                    
+                    # replace the closing xml for prompt time
+                    j += 1
+                    segment = op_line[j]
+                    logging.info(b'replacing xml closing prompt_time: ' + segment[1])
+                    op_line[j] = ['xml', b'']
+                        
+
+                j += 1
+
+
+            '''
+            # example of dumping a line based on string.startswith - for player filter?
+            if op_line:
+
+                if op_line[0][0] == 'xml':
+                    if op_line[0][1].startswith(b'<prompt time="'):
+                        op_line.pop(0)
+            '''
+
+            '''
+            # strip the line back down to text, view text and xml
+            # replace is not working somehow... the &gt; is in the text component...
+            clean_line = b''.join([x[1].replace(b'&gt;', b'>') for x in op_line if x[0] == 'text'])
+
+            # send a hunk of xml so we can see what happened
+            xml_line = b''.join([x[1].replace(b'&gt;', b'>') for x in op_line if x[0] == 'xml'])
+
+            #current_line = clean_line + b' :: ' + xml_line
+            '''
+

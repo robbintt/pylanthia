@@ -28,14 +28,17 @@ import lxml.etree
 import urwid
 import urwid_readline
 
+# this is not thread safe... need Queue.Queue
+# Queue.Queue uses collections.deque and adds thread safety
 from collections import deque
 from itertools import islice
+# lowercase in python3
+import queue
 
 from config import *
 from eaccess import get_game_key
 
-
-
+TCP_BUFFER_SLEEP = 0.01 # not sure if i want to sleep this or not
 SCREEN_REFRESH_SPEED = 0.1 # how fast to redraw the screen from the buffer
 BUF_PROCESS_SPEED = 0.01 # this is a timer for the buffer view creation thread
 BUFSIZE = 16 # This seems to give a better response time than 128 bytes
@@ -56,16 +59,6 @@ tcplog_location = os.path.join(log_directory, tcplog_directory, tcplog_filename)
 if not os.path.exists(tcplog_location):
     with open(tcplog_location, 'w') as f:
         f.write('')
-
-
-'''
-# lets just dump to a file not log for now
-tcplog_handler = logging.FileHandler(file_name)
-
-
-root_logger = logging.getLogger()
-root_logger.addHandler(tcplog_handler)
-'''
 
 
 def chop_xml_and_text_from_line(line):
@@ -123,6 +116,7 @@ def chop_xml_and_text_from_line(line):
         #logging.info(b'text parsed: ' + xml_free_line_part)
         xml_free_line_part = b'' # reset the xml_free_line_part
 
+    logging.info(op_line)
 
     return op_line
 
@@ -161,154 +155,12 @@ def process_lines(tcp_lines, player_lines):
 
             line = tcp_lines.popleft()
 
-            op_line = chop_xml_and_text_from_line(line)
-
-            # this needs generalized to feed xml strings that trigger stuff into a different
-            # data structure in order to alter UI elements. Maybe a different deque here
-            # and a thread that manages a data structure that informs the UI.
-            # STILL NEED to do the multiline XML+string+XML example... *** URGENT
-            j = 0
-            while j < len(op_line):
-                segment = op_line[j]
-
-                #<compass><dir value="n"/><dir value="e"/><dir value="w"/></compass>>
-
-                # parse style before room description
-                # no buffering needed
-                if segment[1].startswith(b'<style id=""/>'):
-
-                    # wipe some xml for now - later trigger event from this?
-                    logging.info(b'killing style tag for room description:' + segment[1])
-                    segment[1] = b''
-                    op_line[j] = segment
-
-                    # wipe the preset tag too
-                    j += 1
-                    segment = op_line[j]
-                    # escape the single quotes since this will be packed into a dynamic structure
-                    logging.info(b'killing <preset id=\'roomDesc\'>' + segment[1])
-                    segment[1] = b''
-                    op_line[j] = segment
-                
-
-                # parse: '<resource picture'
-                # no buffering needed
-                if segment[1].startswith(b'<resource picture'):
-
-                    # wipe some xml for now - later trigger event from this?
-                    logging.info(b'killing resource picture:' + segment[1])
-                    segment[1] = b''
-                    op_line[j] = segment
-
-                    j += 1
-                    segment = op_line[j]
-                    logging.info(b'killing style tag for <resource picture: ' + segment[1])
-                    segment[1] = b''
-                    op_line[j] = segment
-
-
-                # parse: <pushStream id="death"/>
-                elif segment[1].startswith(b'<pushStream id="death"/>'):
-
-                    # wipe some xml for now - later trigger event from this?
-                    logging.info(b'killing pushStream for death: ' + segment[1])
-                    segment[1] = b''
-                    op_line[j] = segment
-
-                    # drop death text for now - later push it to another place: window/deque?
-                    j += 1
-                    segment = op_line[j]
-                    logging.info(b'deleting death text: ' + segment[1])
-                    op_line[j] = ['text', b'>\n']
-
-                    # gotta get a new line...
-                    tcp_buffering() # wait for at least 1 tcp line to exist
-                    op_line.extend(chop_xml_and_text_from_line(tcp_lines.popleft()))
-
-                    j += 1
-                    segment = op_line[j]
-                    logging.info(b'killing popStream for death: ' + segment[1])
-                    segment[1] = b''
-                    op_line[j] = segment
-
-                # parse: '<clearStream id="percWindow"/>' '<pushStream id="percWindow"/>' and popstream
-                elif segment[1].startswith(b'<clearStream id="percWindow"/>'):
-
-                    # wipe some xml for now - later trigger event from this?
-                    logging.info(b'killing clearStream for percWindow: ' + segment[1])
-                    segment[1] = b''
-                    op_line[j] = segment
-
-                    tcp_buffering() # wait for at least 1 tcp line to exist
-                    op_line.extend(chop_xml_and_text_from_line(tcp_lines.popleft()))
-
-                    # wipe some xml for now - later trigger event from this?
-                    logging.info(b'killing pushStream for percWindow: ' + segment[1])
-                    segment[1] = b''
-                    op_line[j] = segment
-
-                    tcp_buffering() # wait for at least 1 tcp line to exist
-                    op_line.extend(chop_xml_and_text_from_line(tcp_lines.popleft()))
-
-                    j += 1
-                    segment = op_line[j]
-                    logging.info(b'killing popStream for percWindow: ' + segment[1])
-                    segment[1] = b''
-                    op_line[j] = segment
-
-                # parse 2: prompt time 
-                # use an elif here since j has not yet been incremented
-                elif segment[1].startswith(b'<prompt time="'):
-
-                    # wipe some xml for now - later trigger event from this?
-                    logging.info(b'killing prompt_time: ' + segment[1])
-                    segment[1] = b''
-                    op_line[j] = segment
-
-                    # detect the prompt and replace with a > as text segment
-                    # it would be unsafe to rerun this text to find xml
-                    j += 1
-                    segment = op_line[j]
-                    logging.info(b'replacing &gt; on prompt_text: ' + segment[1])
-                    op_line[j] = ['text', b'>\n']
-
-
-                    tcp_buffering() # wait for at least 1 tcp line to exist
-                    op_line.extend(chop_xml_and_text_from_line(tcp_lines.popleft()))
-                    
-                    # replace the closing xml for prompt time
-                    j += 1
-                    segment = op_line[j]
-                    logging.info(b'replacing xml closing prompt_time: ' + segment[1])
-                    op_line[j] = ['xml', b'']
-                        
-
-                j += 1
-
-
-            '''
-            # example of dumping a line based on string.startswith - for player filter?
-            if op_line:
-
-                if op_line[0][0] == 'xml':
-                    if op_line[0][1].startswith(b'<prompt time="'):
-                        op_line.pop(0)
-            '''
-
-            '''
-            # strip the line back down to text, view text and xml
-            # replace is not working somehow... the &gt; is in the text component...
-            clean_line = b''.join([x[1].replace(b'&gt;', b'>') for x in op_line if x[0] == 'text'])
-
-            # send a hunk of xml so we can see what happened
-            xml_line = b''.join([x[1].replace(b'&gt;', b'>') for x in op_line if x[0] == 'xml'])
-
-            #current_line = clean_line + b' :: ' + xml_line
-            '''
-
+            #op_line = chop_xml_and_text_from_line(line)
 
             # process xml in place before this, this step leaves any unprocessed xml
-            rebuilt_line = b''.join(x[1] for x in op_line)
+
+            #rebuilt_line = b''.join(x[1] for x in op_line)
+            rebuilt_line = line # find the lag
             player_lines.append(rebuilt_line)
         else:
             # if there are no lines, maybe give a spinning wheel or a timeout
@@ -460,12 +312,18 @@ def filter_lines(view_lines):
 
 def get_tcp_lines():
     ''' receive text and xml into a buffer and split on newlines
+
+    this function does lock tcp_lines
+    do we need a timer to give it back to the GIL?
+
+    this thing does not sleep, i don't think it needs to
+    the socket waits around a lot
     '''
     tcp_buffer = bytes()
     while True:
         tcp_chunk = gamesock.recv(BUFSIZE)
 
-        # this is kind of a lot of writes...
+        # this is kind of a lot of writes... should be fine though
         with open(tcplog_location, 'a') as f:
             f.write(tcp_chunk.decode('utf-8'))
 
@@ -475,10 +333,11 @@ def get_tcp_lines():
 
         if b'\n' in tcp_buffer:
             tcp_lines.extend(tcp_buffer.split(b'\r\n'))
-            tcp_buffer = tcp_lines.pop() # leave the last line, it's normally not cooked
+            tcp_buffer = tcp_lines.pop() # leave the uncooked portion
             #logging.info("tcp lines processed: {}".format(len(tcp_buffer)))
         else:
             #logging.info("tcp line has no newline: {}".format(tcp_buffer))
+            time.sleep(TCP_BUFFER_SLEEP)
             pass
 
 
@@ -488,10 +347,11 @@ def urwid_main():
 
     # wrap the top text widget with a flow widget like Filler: https://github.com/urwid/urwid/wiki/FAQ
     #main_window = urwid.Text('\r\n'.join(tcp_lines))
+    fixed_size_for_now = 30
     main_window = urwid.Text('') # initalize the window empty
     input_box = urwid_readline.ReadlineEdit('> ', '') # pretty sure urwid_readline package needs Python3
     mainframe = urwid.Pile([
-        ('weight', 70, urwid.Filler(main_window, valign='bottom')),
+        ('weight', fixed_size_for_now, urwid.Filler(main_window, valign='bottom')),
         ('fixed', 1, urwid.Filler(input_box, 'bottom')),
     ], focus_item=1)
 
@@ -516,6 +376,9 @@ def urwid_main():
             # this really should be in some 'handled_input' function or something
             submitted_command = bytes(txt.edit_text, "utf-8")
             logging.info(submitted_command)
+
+            # this should probably get tacked on later than raw tcp lines, 
+            # maybe timestamped as its own output stream, so it can be turned off on certain windows
             tcp_lines.append(b'> ' + submitted_command)
 
             txt.set_edit_text('')
@@ -566,7 +429,9 @@ def urwid_main():
             #tcp_lines.clear()
 
             # slice a view buffer off of player_lines
-            view_buffer_size = 50
+            # if the view buffer is too long, urwid currently cuts off the bottom, which is terrible... how to fix?
+            # can we tap into the current height of the flow widget and give that as the view buffer size?
+            view_buffer_size = fixed_size_for_now
             if len(player_lines) < view_buffer_size:
                 _min_slice = 0
             else:
