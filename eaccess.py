@@ -7,7 +7,7 @@ SGE Protocol: https://gswiki.play.net/SGE_protocol/saved_posts
 import socket
 import time
 
-from config import *
+from config import eaccess_host, eaccess_port, username, password, character, gamestring
 
 def get_game_key(host, port, username, password):
 
@@ -91,15 +91,14 @@ def get_game_key(host, port, username, password):
 
     response_parts = response.split(b'\t')[5:] # trim the leading stuff
 
-    character_keys = { char: key for char, key in zip(response_parts[1::2], response_parts[::2]) }
+    character_keys = { char.upper(): key for char, key in zip(response_parts[1::2], response_parts[::2]) }
+    character_upper = character.upper() # compare apples to apples
 
-    if character not in character_keys.keys():
+    if character_upper not in character_keys.keys():
         raise Exception("Your character name is not on this account")
-    else:
-        print(character_keys[character])
 
     # choose character - not sure if necessary, can use for validation
-    sock.sendall(b'L\t' + character_keys[character] + b'\tPLAY\n')
+    sock.sendall(b'L\t' + character_keys[character_upper] + b'\tPLAY\n')
     # drop the response for now, we specify this in settings
     tcp_buffer = bytes()
     while b'\n' not in tcp_buffer:
