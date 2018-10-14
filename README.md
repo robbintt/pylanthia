@@ -1,6 +1,6 @@
 # Pylanthia
 
-A terminal dragonrealms client in Python.
+A terminal-based dragonrealms client in Python.
 
 
 ## Goal
