@@ -92,6 +92,7 @@ SCREEN_REFRESH_SPEED = 0.1 # how fast to redraw the screen from the buffer
 BUF_PROCESS_SPEED = 0.01 # this is a timer for the buffer view creation thread
 COMMAND_PROCESS_SPEED = 0.1 # max speed that commands are submitted at
 BUFSIZE = 16 # This seems to give a better response time than 128 bytes
+MAX_IDLE_TIME = 60*60*2  # 60*60  # 60 minutes
 
 # set up logging into one place for now
 log_filename = "{}_log.{}.txt".format('dr', datetime.datetime.now().strftime('%Y-%m-%d.%H:%M:%S'))
@@ -107,6 +108,7 @@ class GlobalGameState:
         '''
         self.roundtime = 0
         self.time = 0
+        self.time_last_command = 0 # the time of the last command submitted
         self.exits = dict()
         self.reset_exits()
         self.command_history = queue.LifoQueue() # sometimes rt_command_queue takes back the last in
@@ -160,6 +162,11 @@ def process_command_queue(global_game_state, tcp_lines):
             tcp_lines.put(b'> ' + submitted_command)
             logging.info(submitted_command)
             global_game_state.command_history.put(submitted_command)
+            global_game_state.time_last_command = global_game_state.time
+
+            if submitted_command in [b'exit', b'quit']:
+                logging.info("quit triggered")
+                quit_event.set()
 
             continue # ensure this whole queue is processed before the rt_command_queue
 
@@ -178,8 +185,6 @@ def process_command_queue(global_game_state, tcp_lines):
             current_roundtime = int(global_game_state.roundtime - global_game_state.time)
             if current_roundtime == 0:
                 global_game_state.command_queue.put(global_game_state.rt_command_queue.get())
-                # try without this with a higher command process speed
-                #time.sleep(1) # just in case there's a submit issue
                 
 
 def preprocess_tcp_lines(tcp_lines, preprocessed_lines):
@@ -753,13 +758,18 @@ def urwid_main():
     # these were for the terminal
     def set_title(widget, title):
         mainframe.set_title(title)
-
     def quit(*args, **kwargs):
         raise urwid.ExitMainLoop()
 
 
+
+
     def unhandled_input(txt, key):
-        ''' why is this called unhandled input if it is the input handler??
+        ''' 
+        
+        q: why is this called unhandled input if it is the input handler??
+        a: ... urwid thing, this can probably be changed to whatever is appropriate, just use care
+
         '''
 
         if key in ("enter"):
@@ -786,8 +796,6 @@ def urwid_main():
             txt.set_edit_text('')
             txt.set_edit_pos(0)
 
-            if submitted_command in ['exit', 'quit']:
-                raise Exception('Client has exited, use exception to cleanup for now.')
             return
 
         if key in ("up", "down"):
@@ -834,6 +842,7 @@ def urwid_main():
                 global_game_state.rt_command_queue.queue.clear()
             return
 
+        # not working
         if key in ("ctrl q", "ctrl Q"):
             #raise urwid.ExitMainLoop()
             quit()
@@ -867,6 +876,11 @@ def urwid_main():
             # do this first so that the urwid MainLoop 'loop' exists! otherwise too fast
             # it would be better to kick this off inside loop.run I think
             time.sleep(SCREEN_REFRESH_SPEED)
+
+            # this really should be in the main thread...
+            # urwid has event_loop that can probably handle this
+            if quit_event.is_set():
+                raise Exception('Client has exited, use exception to cleanup for now.')
 
             status_line_contents = dict()
             # calculate remaining roundtime
@@ -977,6 +991,18 @@ def gametime_incrementer(global_game_state):
         # this is incremented since we only get gametime about every 5-20 seconds
         global_game_state.time += 1
 
+        # this should only run the first time global game state is set
+        # otherwise (as it is now) we check this way more than necessary...
+        # funky hack to make sure we aren't incrementing from zero still
+        # it's acceptable to use a known global game time since it increments forever but still sloppy
+        if global_game_state.time > 100000 and global_game_state.time_last_command == 0:
+            global_game_state.time_last_command = global_game_state.time
+
+        # quit if idle too long
+        time_since_last_command = global_game_state.time - global_game_state.time_last_command 
+        if time_since_last_command >= MAX_IDLE_TIME:
+            global_game_state.command_queue.put(b'quit')
+
 
 if __name__ == '__main__':
     ''' Set up the connection and start the threads
@@ -987,6 +1013,8 @@ if __name__ == '__main__':
     preprocessed_lines = queue.Queue()
     text_lines = queue.Queue()
     player_lines = deque() # process the xml into a player log, which can also be a player view
+
+    quit_event = threading.Event() # set this flag with quit_event.set() to quit from main thread
     
     GAME_KEY = get_game_key(eaccess_host, eaccess_port, username, password)
 

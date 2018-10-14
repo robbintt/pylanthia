@@ -23,6 +23,11 @@ Provide many of the useful features, including scripting, of dragonrealms client
 1. add the text stream highlight/alter and the text stream ignores
   - and text stream triggers?
 1. make it so a down arrow when at the end of the history gives a blank line
+1. Fix exit to happen in urwid_main event_loop... not sure how
+1. Fix detection that global_game_state.time is set so that it doesn't happen every time
+  - right now the global game state time tries to check that the time has been set EVERY TIME
+  - needs to just do that once and avoid checking for the entire thread existence
+  - there's also a hacky like > 100000 value that shouldn't be necessary
 
 
 ## Release Plan
