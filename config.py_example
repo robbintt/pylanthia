@@ -1,34 +1,15 @@
-'''
-remove or move these to docs once the client generates its own token
-Stormfront .sal file:
-UPPORT=5535
-GAME=STORM
-GAMECODE=DR
-FULLGAMENAME=StormFront
-GAMEFILE=STORMFRONT.EXE
-GAMEHOST=storm.dr.game.play.net
-GAMEPORT=11024
-KEY=thekey
 
-Wizard .sal file:
-UPPORT=5535
-GAME=WIZ
-GAMECODE=DR
-FULLGAMENAME=Wizard_Front_End
-GAMEFILE=WIZARD.EXE
-GAMEHOST=prime.dr.game.play.net
-GAMEPORT=4901
-KEY=the_key
-'''
+#
+# for game connection
+#
 
-
-# how can i request a token... genie3 does it...
-server_login_token = b'key_string'
 
 frontend_settings = b"/FE:STORMFRONT /VERSION:1.0.1.26 /P:WIN_XP /XML"
 
 server_addr = "storm.dr.game.play.net"
+
 server_port = "11024"
+
 
 
 #
@@ -39,5 +20,10 @@ eaccess_host = 'eaccess.play.net'
 eaccess_port = '7900'
 
 username = b'user'
-password = b'pass'
+password = b'user'
+
+gamestring = b'DR'
+
+# probably need to UPPER or LOWER the character dictionary in eaccess.py
+character = b'Charname'
 
