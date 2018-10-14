@@ -40,12 +40,19 @@ def parse_broken_xml(broken_xml):
 if __name__ == '__main__':
 
 
+    game_state = dict()
+
+    game_state['time'] = 0
+
+    game_state['exits'] = ['n', 'e', 's', 'w', 'ne', 'se', 'nw', 'sw']
+
     # replay some lines from a raw log
     # if you don't have this, just make it here or in your preferred location
     # if you have no raw logs, run the client for a bit to build one
     with open('logs/tcp.txt') as f:
         raw_lines = f.readlines()
 
+    # reimplemented from pylanthia.py
     labelled_raw_lines = deque()
     for line in raw_lines:
         if line[0] == '<':
@@ -57,11 +64,19 @@ if __name__ == '__main__':
     for line in labelled_raw_lines:
         if line[0] == 'xml':
             print("RAW: ", line[1])
+
+            # have to determine if broken or if multiline
             result = parse_broken_xml(line[1])
             for action, elem in result:
-                print("{}: {}, tag: {}".format(action, elem, elem.tag))
-            input("press enter to continue...") # just wait for the user to continue
-        # always the case unless something breaks)
+                print("{}: {}, tag: {}, attrib: {}".format(action, elem, elem.tag, elem.attrib))
+                if elem.tag == 'prompt' and elem.attrib.get('time'):
+                    print("TIME: ", elem.attrib.get('time'))
+                if elem.tag == 'compass':
+                    print('COMPASS DIR ELEMENTS: ', dir(elem), elem.iterchildren('d'))
+                    for direction in elem.iterchildren('dir'):
+                        print('exit value attrib:', direction.attrib['value'])
+            input("> press enter to continue...") # just wait for the user to continue
+
         elif line[0] == 'text':
             final_lines.append(line[1])
             print(line[1])
