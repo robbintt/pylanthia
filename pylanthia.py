@@ -86,26 +86,21 @@ def process_lines(tcp_lines, player_lines):
     while True:
         if tcp_lines:
 
-            current_line = tcp_lines.popleft()
+            line = tcp_lines.popleft()
 
-
-            # this is just grabbed from the filter function, delete that one once you're done messing around
-            # the code is somehow dropping a letter off the end of some or all 'text' strings
-
-            line = current_line
-            # assuming lines only have xml if they start with xml? interesting idea, not sure if real
-            i = 0 
+            # probably not using these
             xml_free_line_segments = list()
             xml_line_segments = list()
-            xml_free_line_part = b''
-            xml_line_part = b''
-            op_line = list() # give an ordered and parsed tuple of (string, type) 
 
 
             # ISSUE: i'm pretty sure this is dropping a letter off the first non-xml line segment (or more)
             # make a bunch of line segments
             # note that line is a bytes() type, indexing line[i] returns int
             # if we slice into it line[i:i+1] we get a bytes() type of length 1
+            xml_free_line_part = b''
+            xml_line_part = b''
+            op_line = list() # give an ordered and parsed list of: [string value, xml or text?]
+            i = 0 
             while i < len(line):
 
                 if line[i:i+1] != b'<':
@@ -123,41 +118,57 @@ def process_lines(tcp_lines, player_lines):
 
                     # store the xml part off
                     xml_line_segments.append(xml_line_part)
-                    op_line.append(('xml', xml_line_part))
+                    op_line.append(['xml', xml_line_part]) # modify these in place later, sometimes
                     xml_line_part = b'' # reset the xml part
 
 
                 # store xml free part off
                 if len(xml_free_line_part) > 1:
                     xml_free_line_segments.append(xml_free_line_part)
-                    op_line.append(('text', xml_free_line_part))
+                    op_line.append(['text', xml_free_line_part]) # modify these in place later, sometimes
                     xml_free_line_part = b'' # reset the xml_free_line_part
 
                 i += 1 # covers incrementing past the '>' and incrementing if not yet in a '<'
 
+
+            '''
+            # example of dumping a line based on string.startswith - for player filter?
             if op_line:
 
                 if op_line[0][0] == 'xml':
                     if op_line[0][1].startswith(b'<prompt time="'):
                         op_line.pop(0)
+            '''
 
-
-            # strip the line back down to text
+            '''
+            # strip the line back down to text, view text and xml
             # replace is not working somehow... the &gt; is in the text component...
             clean_line = b''.join([x[1].replace(b'&gt;', b'>') for x in op_line if x[0] == 'text'])
 
             # send a hunk of xml so we can see what happened
             xml_line = b''.join([x[1].replace(b'&gt;', b'>') for x in op_line if x[0] == 'xml'])
 
-            current_line = clean_line + b' :: ' + xml_line
+            #current_line = clean_line + b' :: ' + xml_line
+            '''
 
+            j = 0
+            while j < len(op_line):
+                line = op_line[j]
+                if line[0] == 'xml':
+                    # drop any prompt time lines
+                    logging.info(b'xml segment: ' + line[1])
+                    if line[1].startswith(b'<prompt time="'):
+                        logging.info(b'killing prompt_time: ' + line[1])
+                        line[1] = b''
+                        op_line[j] = line
 
+                j += 1
 
+                        
 
-
-
-            # lets just put this in a thread to start
-            player_lines.append(current_line)
+            # process xml in place before this, this step leaves any unprocessed xml
+            rebuilt_line = b''.join(x[1] for x in op_line)
+            player_lines.append(rebuilt_line)
         else:
             # if there are no lines, maybe give a spinning wheel or a timeout
             pass
@@ -324,9 +335,10 @@ def get_tcp_lines():
         if b'\n' in tcp_buffer:
             tcp_lines.extend(tcp_buffer.split(b'\r\n'))
             tcp_buffer = tcp_lines.pop() # leave the last line, it's normally not cooked
-            logging.info("tcp lines processed: {}".format(len(tcp_buffer)))
+            #logging.info("tcp lines processed: {}".format(len(tcp_buffer)))
         else:
-            logging.info("tcp line has no newline: {}".format(tcp_buffer))
+            #logging.info("tcp line has no newline: {}".format(tcp_buffer))
+            pass
 
 
 def urwid_main():
