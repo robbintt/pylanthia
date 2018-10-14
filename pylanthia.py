@@ -67,6 +67,64 @@ root_logger.addHandler(tcplog_handler)
 '''
 
 
+def chop_xml_and_text_from_line(line):
+    ''' Given a line chop it into xml and text sections
+
+    Currently used in process_lines
+
+    Note the xml is not real xml, for now we're parsing it manually.
+    Might consider just reforming it into xml and using lxml to parse attr:value pairs and content
+
+    return an ordered and parsed list of: [string value, xml or text?]
+    '''
+
+    # ISSUE: i'm pretty sure this is dropping a letter off the first non-xml line segment (or more)
+    # make a bunch of line segments
+    # note that line is a bytes() type, indexing line[i] returns int
+    # if we slice into it line[i:i+1] we get a bytes() type of length 1
+    xml_free_line_part = b''
+    xml_line_part = b''
+    op_line = list() # give an ordered and parsed list of: [string value, xml or text?]
+    i = 0 
+    while i < len(line):
+
+        if line[i:i+1] != b'<':
+            xml_free_line_part += line[i:i+1]
+
+        # found some xml
+        else:
+
+            # store the text segment
+            if xml_free_line_part:
+                op_line.append(['text', xml_free_line_part]) # modify these in place later, sometimes
+                #logging.info(b'text parsed: ' + xml_free_line_part)
+                xml_free_line_part = b'' # reset the xml_free_line_part
+
+            # increment until you get out of the xml tag or out of the line
+            while i < len(line) and line[i:i+1] != b'>':
+                xml_line_part += line[i:i+1]
+                i += 1
+
+            # toss the last b'>' on the end!
+            xml_line_part += line[i:i+1]
+
+            # store the xml part off
+            op_line.append(['xml', xml_line_part]) # modify these in place later, sometimes
+            #logging.info(b'xml parsed: ' + xml_line_part)
+            xml_line_part = b'' # reset the xml part
+
+        i += 1 # covers incrementing past the '>' and incrementing if not yet in a '<'
+
+
+    # store any final text segment
+    if xml_free_line_part:
+        op_line.append(['text', xml_free_line_part]) # modify these in place later, sometimes
+        #logging.info(b'text parsed: ' + xml_free_line_part)
+        xml_free_line_part = b'' # reset the xml_free_line_part
+
+
+    return op_line
+
 
 def process_lines(tcp_lines, player_lines):
     ''' process the deque of tcp lines back to front, works in a separate thread
@@ -82,53 +140,149 @@ def process_lines(tcp_lines, player_lines):
     if i could process this multiline token, it would solve some of my issue
     a ton of tokens are duplicate and can just be dropped
     ''' 
+    
+    def tcp_buffering():
+        ''' wait for another line, sleep is the same as the tcp buffer thread
+        '''
+        while not tcp_lines:
+            time.sleep(BUF_PROCESS_SPEED)
+
+    ''' 
+    all this multiline processing seems to be causing some slowness
+    it's probably because it's a cludgy trash way of doing things
+    nonetheless, it might be nice to pass these partial strings to the renderer...
+    but i really don't think it's necessary, i think this logic just needs smoothed out
+    '''
 
     while True:
+        # should this use tcp_buffering function?
         if tcp_lines:
 
             line = tcp_lines.popleft()
 
-            # probably not using these
-            xml_free_line_segments = list()
-            xml_line_segments = list()
+            op_line = chop_xml_and_text_from_line(line)
+
+            # this needs generalized to feed xml strings that trigger stuff into a different
+            # data structure in order to alter UI elements. Maybe a different deque here
+            # and a thread that manages a data structure that informs the UI.
+            # STILL NEED to do the multiline XML+string+XML example... *** URGENT
+            j = 0
+            while j < len(op_line):
+                segment = op_line[j]
+
+                #<compass><dir value="n"/><dir value="e"/><dir value="w"/></compass>>
+
+                # parse style before room description
+                # no buffering needed
+                if segment[1].startswith(b'<style id=""/>'):
+
+                    # wipe some xml for now - later trigger event from this?
+                    logging.info(b'killing style tag for room description:' + segment[1])
+                    segment[1] = b''
+                    op_line[j] = segment
+
+                    # wipe the preset tag too
+                    j += 1
+                    segment = op_line[j]
+                    # escape the single quotes since this will be packed into a dynamic structure
+                    logging.info(b'killing <preset id=\'roomDesc\'>' + segment[1])
+                    segment[1] = b''
+                    op_line[j] = segment
+                
+
+                # parse: '<resource picture'
+                # no buffering needed
+                if segment[1].startswith(b'<resource picture'):
+
+                    # wipe some xml for now - later trigger event from this?
+                    logging.info(b'killing resource picture:' + segment[1])
+                    segment[1] = b''
+                    op_line[j] = segment
+
+                    j += 1
+                    segment = op_line[j]
+                    logging.info(b'killing style tag for <resource picture: ' + segment[1])
+                    segment[1] = b''
+                    op_line[j] = segment
 
 
-            # ISSUE: i'm pretty sure this is dropping a letter off the first non-xml line segment (or more)
-            # make a bunch of line segments
-            # note that line is a bytes() type, indexing line[i] returns int
-            # if we slice into it line[i:i+1] we get a bytes() type of length 1
-            xml_free_line_part = b''
-            xml_line_part = b''
-            op_line = list() # give an ordered and parsed list of: [string value, xml or text?]
-            i = 0 
-            while i < len(line):
+                # parse: <pushStream id="death"/>
+                elif segment[1].startswith(b'<pushStream id="death"/>'):
 
-                if line[i:i+1] != b'<':
-                    xml_free_line_part += line[i:i+1]
+                    # wipe some xml for now - later trigger event from this?
+                    logging.info(b'killing pushStream for death: ' + segment[1])
+                    segment[1] = b''
+                    op_line[j] = segment
 
-                else:
+                    # drop death text for now - later push it to another place: window/deque?
+                    j += 1
+                    segment = op_line[j]
+                    logging.info(b'deleting death text: ' + segment[1])
+                    op_line[j] = ['text', b'>\n']
 
-                    # increment until you get out of the xml tag or out of the line
-                    while i < len(line) and line[i:i+1] != b'>':
-                        xml_line_part += line[i:i+1]
-                        i += 1
+                    # gotta get a new line...
+                    tcp_buffering() # wait for at least 1 tcp line to exist
+                    op_line.extend(chop_xml_and_text_from_line(tcp_lines.popleft()))
 
-                    # toss the last b'>' on the end!
-                    xml_line_part += line[i:i+1]
+                    j += 1
+                    segment = op_line[j]
+                    logging.info(b'killing popStream for death: ' + segment[1])
+                    segment[1] = b''
+                    op_line[j] = segment
 
-                    # store the xml part off
-                    xml_line_segments.append(xml_line_part)
-                    op_line.append(['xml', xml_line_part]) # modify these in place later, sometimes
-                    xml_line_part = b'' # reset the xml part
+                # parse: '<clearStream id="percWindow"/>' '<pushStream id="percWindow"/>' and popstream
+                elif segment[1].startswith(b'<clearStream id="percWindow"/>'):
+
+                    # wipe some xml for now - later trigger event from this?
+                    logging.info(b'killing clearStream for percWindow: ' + segment[1])
+                    segment[1] = b''
+                    op_line[j] = segment
+
+                    tcp_buffering() # wait for at least 1 tcp line to exist
+                    op_line.extend(chop_xml_and_text_from_line(tcp_lines.popleft()))
+
+                    # wipe some xml for now - later trigger event from this?
+                    logging.info(b'killing pushStream for percWindow: ' + segment[1])
+                    segment[1] = b''
+                    op_line[j] = segment
+
+                    tcp_buffering() # wait for at least 1 tcp line to exist
+                    op_line.extend(chop_xml_and_text_from_line(tcp_lines.popleft()))
+
+                    j += 1
+                    segment = op_line[j]
+                    logging.info(b'killing popStream for percWindow: ' + segment[1])
+                    segment[1] = b''
+                    op_line[j] = segment
+
+                # parse 2: prompt time 
+                # use an elif here since j has not yet been incremented
+                elif segment[1].startswith(b'<prompt time="'):
+
+                    # wipe some xml for now - later trigger event from this?
+                    logging.info(b'killing prompt_time: ' + segment[1])
+                    segment[1] = b''
+                    op_line[j] = segment
+
+                    # detect the prompt and replace with a > as text segment
+                    # it would be unsafe to rerun this text to find xml
+                    j += 1
+                    segment = op_line[j]
+                    logging.info(b'replacing &gt; on prompt_text: ' + segment[1])
+                    op_line[j] = ['text', b'>\n']
 
 
-                # store xml free part off
-                if len(xml_free_line_part) > 1:
-                    xml_free_line_segments.append(xml_free_line_part)
-                    op_line.append(['text', xml_free_line_part]) # modify these in place later, sometimes
-                    xml_free_line_part = b'' # reset the xml_free_line_part
+                    tcp_buffering() # wait for at least 1 tcp line to exist
+                    op_line.extend(chop_xml_and_text_from_line(tcp_lines.popleft()))
+                    
+                    # replace the closing xml for prompt time
+                    j += 1
+                    segment = op_line[j]
+                    logging.info(b'replacing xml closing prompt_time: ' + segment[1])
+                    op_line[j] = ['xml', b'']
+                        
 
-                i += 1 # covers incrementing past the '>' and incrementing if not yet in a '<'
+                j += 1
 
 
             '''
@@ -151,20 +305,6 @@ def process_lines(tcp_lines, player_lines):
             #current_line = clean_line + b' :: ' + xml_line
             '''
 
-            j = 0
-            while j < len(op_line):
-                line = op_line[j]
-                if line[0] == 'xml':
-                    # drop any prompt time lines
-                    logging.info(b'xml segment: ' + line[1])
-                    if line[1].startswith(b'<prompt time="'):
-                        logging.info(b'killing prompt_time: ' + line[1])
-                        line[1] = b''
-                        op_line[j] = line
-
-                j += 1
-
-                        
 
             # process xml in place before this, this step leaves any unprocessed xml
             rebuilt_line = b''.join(x[1] for x in op_line)
