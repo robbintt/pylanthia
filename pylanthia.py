@@ -32,14 +32,38 @@ import logging
 import os
 
 
-log_filename = "{}_log.{}.txt".format('dr', datetime.datetime.now().strftime('%y%m%d%H%M%S'))
+# set up logging into one place for now
+log_filename = "{}_log.{}.txt".format('dr', datetime.datetime.now().strftime('%Y-%m-%d.%H:%M:%S'))
 log_directory = "logs"
 log_location = os.path.join(log_directory, log_filename)
-
 logging.basicConfig(filename=log_location, level=logging.INFO)
 
 
-BUFSIZE = 128 # adjust based on actual data for dr buffers
+# dump tcp separately
+tcplog_filename = "{}_tcplog.{}.txt".format('dr', datetime.datetime.now().strftime('%Y-%m-%d.%H:%M:%S'))
+tcplog_directory = "tcplogs"
+tcplog_location = os.path.join(log_directory, tcplog_directory, tcplog_filename)
+
+# check this once here, needs to be elsewhere though
+if not os.path.exists(tcplog_location):
+    with open(tcplog_location, 'w') as f:
+        f.write('')
+
+
+'''
+# lets just dump to a file not log for now
+tcplog_handler = logging.FileHandler(file_name)
+
+
+root_logger = logging.getLogger()
+root_logger.addHandler(tcplog_handler)
+'''
+
+
+
+
+
+BUFSIZE = 16 # This seems to give a better response time than 128 bytes
 
 
 def filter_lines(view_lines):
@@ -93,8 +117,16 @@ def get_tcp_lines():
     '''
     tcp_buffer = bytes()
     while True:
-        res = sock.recv(BUFSIZE)
-        tcp_buffer += res
+        tcp_chunk = sock.recv(BUFSIZE)
+
+        # this is kind of a lot of writes...
+        with open(tcplog_location, 'a') as f:
+            f.write(tcp_chunk.decode('utf-8'))
+
+        # the buffer could f.read the last 4000 characters or something.. what's faster?
+        # right now the buffer grows without limit, which is not the best...
+        tcp_buffer += tcp_chunk
+
         if b'\n' in tcp_buffer:
             new_tcp_lines = True # maybe trigger the refresh here...
             tcp_lines.extend(tcp_buffer.split(b'\r\n'))
@@ -219,7 +251,7 @@ if __name__ == '__main__':
     sock.sendall(frontend_setting)
     sock.sendall(b'\n')
 
-    tcp_lines = deque()
+    tcp_lines = deque() # would it be better to remove the newlines? ugh
     new_tcp_lines = True
 
     # needs a second to connect or else it hangs, then you need to send a newline or two...
