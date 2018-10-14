@@ -184,6 +184,136 @@ def process_lines(preprocessed_lines, player_lines):
         time.sleep(BUF_PROCESS_SPEED)
 
 
+def parse_events(parser, root_element, still_parsing):
+    ''' When an element ends, determine what to do
+
+    these functions govern what is put in the text_lines Queue
+    e.g. text_lines.put(whatever)
+
+    A lot of data is given to the user by XML - store it in game state object
+        - quick health
+        - roundtime
+        - inventory? some...
+        - room contents
+        - assess
+
+
+    scenarios:
+    1. For certain xml root tags, we want to grab multiline
+        - which elements? we need a catalog
+    2. For others, we just want part of the line
+        - this is the default, just stop when you have the tag
+
+
+    '''
+    
+    for action, elem in parser.read_events():
+
+        # store the root element so we can check when it closes
+        if root_element is None:
+            root_element = elem
+
+        # end parsing when the root element closes
+        if action == 'end' and elem is root_element:
+            still_parsing = False
+
+        # lets see some stuff temporarily
+        if action == 'end':
+            #logging.info("Element processed (action = end):" + elem.tag)
+            pass
+
+
+        for e in elem.iter():
+            ''' iterate over element and all descendants in tree
+
+            i can do this without the tag and do actions based on the tag below to parse
+            all xml... not sure if this is managing <standalone\> elements properly...
+
+            use a dict of functions or something here
+                - do i need to check tag name and attrib dict?
+            
+            # in this case the functions still need to handle the attrib dict
+            xml_actions = { 'popBold' : function1,
+                            'prompt'  : function2 }
+
+            
+            '''
+            # not yet used // just an idea
+            class XMLActions():
+                ''' better as a dict or class
+
+                i do like the strings as keys
+
+                dot notation is not as if loading the xml->control flow
+                from a database since it's a string anyways
+
+                especially if i store the xml in a sqlite database
+                '''
+                def __init__(self):
+                    pass
+
+            xml_actions_object = XMLActions()
+
+            
+            def popBold(attrib):
+                ''' xml element is not used
+                '''
+                logging.info("popBold: " + repr(attrib))
+                return
+
+            def popStream(attrib):
+                ''' xml element is not used
+                '''
+                logging.info("popStream: " + repr(attrib))
+                return
+
+            def roundTime(attrib):
+                '''
+                '''
+                logging.info("roundTime: " + repr(attrib))
+                # if they forget roundTime 'value', then we don't update the state
+                if e.attrib.get('value'):
+                    global_game_state.roundtime = int(e.attrib.get('value'))
+                return
+
+            def prompt(attrib):
+                '''
+                '''
+                # if they forget time, then we don't update the state
+                if e.attrib.get('time'):
+                    global_game_state.time = int(e.attrib.get('time'))
+                return
+
+                
+
+            # you would use if statements on the attribs inside
+            # attribs can always be passed as elem.attrib in this format
+            xml_actions = { 'roundTime'  : roundTime,
+                            'prompt'  : prompt,
+                            'popStream' : popStream,
+                            'popBold' : popBold }
+
+            # run the function at e.tag
+            # if there isn't a tag just skip it... 
+            if xml_actions.get(e.tag, None):
+                logging.info("found function for {}: {}".format(e.tag, xml_actions[e.tag]))
+                xml_actions[e.tag](e.attrib)
+            else:
+                # intentionally still passing: popBold
+                # for now: put all xml lines not in xml_actions
+                logging.info(type(etree.tostring(e)))
+                text_lines.put((('text', etree.tostring(e)),)) # tostring is making a bytes string
+                # we could do something custom here, like log the missing xml_action for later use
+                pass
+
+            # is this universally true?
+            if e.tail:
+                text_lines.put((('text', e.tail.encode('utf-8')),))
+
+
+    return root_element, still_parsing
+
+
 def process_game_xml(preprocessed_lines, text_lines):
     ''' Get any game state out of the XML, return a replacement line
 
@@ -199,11 +329,8 @@ def process_game_xml(preprocessed_lines, text_lines):
     player can report the issue and work around it without missing an important detail.
 
     is this relevant anymore?:
-        # use the same rebuilt_line code pattern from above
-        # the current text/xml chopper actually chops xml by tag... which ruins it
         # commented rebuilt line for now bc we're individually pulling each op_line tag
         # rebuilt_line = b''.join(x[1] for x in op_line)
-        # assign this for now so we don't have to rename the variable for testing
 
     '''
     # Queue.get() blocks by default
@@ -215,154 +342,46 @@ def process_game_xml(preprocessed_lines, text_lines):
     if op_line and op_line[0][0] != 'xml':
         text_lines.put(op_line)
         return
-        
-
-    def parse_events(parser, root_element, still_parsing):
-        ''' When an element ends, determine what to do
-
-        these functions govern what is put in the text_lines Queue
-        e.g. text_lines.put(whatever)
-
-        A lot of data is given to the user by XML - store it in game state object
-            - quick health
-            - roundtime
-            - inventory? some...
-            - room contents
-            - assess
 
 
-        scenarios:
-        1. For certain xml root tags, we want to grab multiline
-            - which elements? we need a catalog
-        2. For others, we just want part of the line
-            - this is the default, just stop when you have the tag
-
-
-        '''
-        
-        for action, elem in parser.read_events():
-
-            # store the root element so we can check when it closes
-            if root_element is None:
-                root_element = elem
-
-            # end parsing when the root element closes
-            if action == 'end' and elem is root_element:
-                still_parsing = False
-
-            # lets see some stuff temporarily
-            if action == 'end':
-                #logging.info("Element processed (action = end):" + elem.tag)
-                pass
-
-
-            for e in elem.iter():
-                ''' iterate over element and all descendants in tree
-
-                i can do this without the tag and do actions based on the tag below to parse
-                all xml... not sure if this is managing <standalone\> elements properly...
-
-                use a dict of functions or something here
-                    - do i need to check tag name and attrib dict?
-                
-                # in this case the functions still need to handle the attrib dict
-                xml_actions = { 'popBold' : function1,
-                                'prompt'  : function2 }
-
-                
-                '''
-                # not yet used // just an idea
-                class XMLActions():
-                    ''' better as a dict or class
-
-                    i do like the strings as keys
-
-                    dot notation is not as if loading the xml->control flow
-                    from a database since it's a string anyways
-
-                    especially if i store the xml in a sqlite database
-                    '''
-                    def __init__(self):
-                        pass
-
-                xml_actions_object = XMLActions()
-
-                
-                def popBold(attrib):
-                    ''' xml element is not used
-                    '''
-                    logging.info("popBold: " + repr(attrib))
-                    return
-
-                def roundTime(attrib):
-                    '''
-                    '''
-                    logging.info("roundTime: " + repr(attrib))
-                    # if they forget roundTime 'value', then we don't update the state
-                    if e.attrib.get('value'):
-                        global_game_state.roundtime = int(e.attrib.get('value'))
-                    return
-
-                def prompt(attrib):
-                    '''
-                    '''
-                    # if they forget time, then we don't update the state
-                    if e.attrib.get('time'):
-                        global_game_state.time = int(e.attrib.get('time'))
-                    return
-
-                    
-
-                # you would use if statements on the attribs inside
-                # attribs can always be passed as elem.attrib in this format
-                xml_actions = { 'popBold' : popBold,
-                                'roundTime'  : roundTime,
-                                'prompt'  : prompt }
-
-                # run the function at e.tag
-                # if there isn't a tag just skip it... 
-                if xml_actions.get(e.tag, None):
-                    logging.info("found function for {}: {}".format(e.tag, xml_actions[e.tag]))
-                    xml_actions[e.tag](e.attrib)
-                else:
-                    # we could do something custom here, like log the missing xml_action for later use
-                    pass
-
-
-        return root_element, still_parsing
-
-
-    # may want to specify more events and use the event in the control flow...
-    events = ('start', 'end',)
-
+    # i think there are some multiline xml objects, need to review the TCP dumps
+    # if so, we can just say "if still_parsing: op_line.append(preprocessed_lines.get())
+    # this is a straightforwards way to get a multiline string.
+    # it doesn't solve hypothetical cases where a self-closing tag has text after and then
+    # another self-closing tag symbolizes the end of that text.  - catalog these manually!
     # run each line as its own xml... but this is a disaster as some have closing tags!
     linenum = 0
     while linenum < len(op_line):
 
+        nextline = op_line[linenum][1]
 
-        line = op_line[linenum]
-        # this should only log root elements
-        #logging.info('root element?? should be! :' + repr(line))
         # only feed the line if it starts with xml... is this universally true?
-        if line[0] == 'xml' and line[1]:
+        if op_line[linenum][0] == 'xml':
 
-            #logging.info('now build a parser for xml line content only:' + repr(line[1]))
+            '''
+            # identify if the root xml element has a text tail. if so, append it.
+            # this allows us to munge the text element.tail in the element's 'action' function
+            # *** needs doing *** warning: only self-closing tags have text tails... how to manage this?
+            # *** could label self closing elements in the splitter differently...
+            # *** note: since non-self-closing-elements never have a tail, this "should not" break things...
+            if linenum+1 < len(op_line) and op_line[linenum+1][0] == 'text':
+                linenum += 1
+                tail = op_line[linenum][1]
+                nextline += tail
+            '''
 
-            parser = etree.XMLPullParser(events, recover=True) # we don't want to raise errors
+            events = ('start', 'end',) # other events might be useful too? what are my options?
+            parser = etree.XMLPullParser(events, recover=True) # can we log recoveries somewhere?
             
-            # basically if the root end event has not fired, keep collecting...
-            # how do i trigger that...
-            # need to decide whether to grab another line here
-            # essentially determine if this has a closing tag
-
             # feed lines until the root element is closed
             root_element = None
             still_parsing = True
             while still_parsing and linenum < len(op_line):
 
-                # note that we DO feed text lines threaded inside an xml root element
-                nextline = op_line[linenum] # same as line, but used/incremented in this while loop
-                parser.feed(nextline[1])
+                # the initial nextline is already set up, see directly above
+                if not nextline:
+                    nextline = op_line[linenum][1] # same as line, but used/incremented in this while loop
+                parser.feed(nextline)
 
                 # examine the parser and determine if we should feed more lines or close...
                 root_element, still_parsing = parse_events(parser, root_element, still_parsing)
@@ -371,12 +390,20 @@ def process_game_xml(preprocessed_lines, text_lines):
                 if still_parsing:
                     linenum += 1
 
-            #parser.close() # i think i need to do this... read up
+                nextline = b''
+
+            #parser.close() # i think this is recommended... read about it, it is probably gc'd next loop?
 
         linenum += 1
 
-    # for now put all xml lines
-    text_lines.put(op_line)
+        # feed another line if still parsing
+        # probably need a cap on how many times we will do this before dumping the xml and moving on
+        if linenum >= len(op_line) and still_parsing:
+            op_line.append(preprocessed_lines.get())
+
+    
+    ## once the line is processed, trigger all queued xml events for the line?
+    ## we can also trigger the xml events as they come up...
 
     return
 

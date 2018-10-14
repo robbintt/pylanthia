@@ -50,13 +50,15 @@ if __name__ == '__main__':
     # replay some lines from a raw log
     # if you don't have this, just make it here or in your preferred location
     # if you have no raw logs, run the client for a bit to build one
-    with open('logs/tcp.txt') as f:
+    with open('../logs/tcp.txt') as f:
         raw_lines = f.readlines()
 
     def print_events(parser):
         for action, elem in parser.read_events():
             print("feed={}: {}, tag: {}".format(action, elem, elem.tag))
             print("attribute dict:", elem.attrib)
+            print("tostring:", etree.tostring(elem))
+            print("tostring:", elem.tail)
 
     # https://lxml.de/parsing.html#event-types (hmm)
     # https://lxml.de/parsing.html#incremental-event-parsing
