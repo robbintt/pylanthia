@@ -293,7 +293,7 @@ def parse_events(parser, root_element, still_parsing):
         def pushBold(elem):
             ''' change this line to a color preset, can hardcode for now
             '''
-            text_lines.put((('text', etree.tostring(e)),)) # tostring is making a bytes string
+            #text_lines.put((('text', etree.tostring(e)),)) # tostring is making a bytes string
             return
         
         def popBold(elem):
@@ -325,11 +325,11 @@ def parse_events(parser, root_element, still_parsing):
                     pass
                 # catchall for elements WITH 'id' attr
                 else:
-                    text_lines.put((('text', DEBUG_PREFIX + etree.tostring(e)),)) # tostring is making a bytes string
+                    text_lines.put((('text', DEBUG_PREFIX + etree.tostring(elem)),)) # tostring is making a bytes string
 
             # catchall
             else:
-                text_lines.put((('text', b'pushStream: ' + etree.tostring(e)),)) # tostring is making a bytes string
+                text_lines.put((('text', b'pushStream: ' + etree.tostring(elem)),)) # tostring is making a bytes string
 
             return
 
@@ -361,16 +361,24 @@ def parse_events(parser, root_element, still_parsing):
             if elem.attrib.get('id'):
                 DEBUG_PREFIX = bytes(elem.tag, 'ascii') + b':' + bytes(elem.attrib['id'], 'ascii') + b': '
                 if elem.attrib['id'] == 'speech':
-                    text_lines.put(('text', elem.text,))
+                    #text_lines.put(('text', elem.text,))
+                    pass
                 elif elem.attrib['id'] == 'roomDesc':
-                    text_lines.put(('text', b'ROOM: ' + elem.text,))
+                    logging.info(b"room text: " + etree.tostring(elem))
+                    #logging.info(b"room text: " + bytes(elem, 'ascii'))
+                    #line = (('text', elem.text),)
+                    #text_lines.put(line)
+                    text_lines.put((('text', etree.tostring(elem)),))
+                    pass
                 #attrib == id catchall
                 else:
+                    pass
                     text_lines.put((('text', DEBUG_PREFIX + etree.tostring(elem)),)) # tostring is making a bytes string
 
             # catchall
             else:
                 text_lines.put((('text', b'preset no id:' + etree.tostring(elem)),)) # tostring is making a bytes string
+                pass
             return
 
 
@@ -424,7 +432,7 @@ def parse_events(parser, root_element, still_parsing):
                         'compass' : compass,
                         'component' : component,
                         'resource' : resource,
-                        #'preset' : preset,
+                        'preset' : preset,
                         'style' : style,
                         'dialogData' : dialogData,
                         # if i enable pushstream then it eats up the rest of the input
@@ -464,21 +472,22 @@ def parse_events(parser, root_element, still_parsing):
 
 def process_game_xml(preprocessed_lines, text_lines):
     ''' Get any game state out of the XML, return a replacement line
+    
+    We now want to process any XML line fully as xml using the obj.text and obj.tail values
+    to retrieve text.
 
-    I think I'll need an empty line filter after this, since game state will often
-    return nothing except in a UI indicator. Don't go too far with this though since
-    lines will also be filtered into streams for composition by users.
+    RULE:
+        1. If a line starts with XML it is XML
+        2. Otherwise, it is text.
 
-    This is a temporary function, it will probably end up being an object that has the
-    ability to hold a line and request more lines. Some XML elements are always
-    multiline and we want to be able to parse those as a single glob.
+    This RULE greatly simplifies parsing and removes us from split text/xml lines.
+
+    It's a complicated rewrite, but should present a flatter control flow.
+
+    Some XML elements are always multiline and we want to be able to parse those as a single glob.
 
     The failure state (xml not processed) should leave the XML in the display, so the
     player can report the issue and work around it without missing an important detail.
-
-    is this relevant anymore?:
-        # commented rebuilt line for now bc we're individually pulling each op_line tag
-        # rebuilt_line = b''.join(x[1] for x in op_line)
 
     '''
     # Queue.get() blocks by default
