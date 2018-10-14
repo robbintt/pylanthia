@@ -21,6 +21,10 @@ SIDENOTE:
     Optimistically: if we consider each line to be its own XML stream provided that
     the line starts with a '<', then we might be able to parse each line individually.
 
+IMPORTANT:
+    - I think I need all my windows to be set on... how do i do that: deaths, login, logout, etc.
+    - Players will need to turn all these on to get all the streams
+    - If one is off the stream should just be empty though, no big deal
 '''
 from lxml import etree
 from io import BytesIO 
@@ -52,23 +56,27 @@ if __name__ == '__main__':
     def print_events(parser):
         for action, elem in parser.read_events():
             print("feed={}: {}, tag: {}".format(action, elem, elem.tag))
+            print("attribute dict:", elem.attrib)
 
     # https://lxml.de/parsing.html#event-types (hmm)
     # https://lxml.de/parsing.html#incremental-event-parsing
     # what if i do each line as a feed, and if it doesn't end, then it chews some more...
-    for line in raw_lines:
+    i = 1
+    while i < len(raw_lines):
+        line = raw_lines[i]
         if line[0] == '<':
-            parser = etree.XMLPullParser(events, recover=True)
+            parser = etree.XMLPullParser(events, recover=True) # we don't want to raise errors
             print("raw=", line)
             parser.feed(line)
             print_events(parser)
             import time; time.sleep(1)
         else:
             # so far this is only <d> tags and <a> links in the game copy...
-            # i think <d> tags are monster bold. we can parse them elsewhere
+            # i think <d> tags are monster bold. we can manage them elsewhere
             if '<' in line:
-                print("THE LINE HAS XML IN THE MIDDLE:")
+                print("THE NEXT LINE HAS XML IN THE MIDDLE:")
             print("text line=", line)
+        i += 1
 
     '''
     labelled_raw_lines = deque()
