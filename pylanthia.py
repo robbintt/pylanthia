@@ -108,6 +108,7 @@ class GlobalGameState:
         self.time = 0
         self.exits = dict()
         self.reset_exits()
+        self.command_history = list()
 
 
     def reset_exits(self):
@@ -364,6 +365,8 @@ def parse_events(parser, root_element, still_parsing):
                 logging.info("found function for {}: {}".format(e.tag, xml_actions[e.tag]))
                 try:
                     xml_actions[e.tag](e)
+                # we need to globally handle exceptions gracefully without crashing
+                # i think this raise will eventually pass the exception up to the handler
                 except Exception as exc:
                     raise exc
             else:
@@ -461,6 +464,11 @@ def process_game_xml(preprocessed_lines, text_lines):
                 nextline = b''
 
             #parser.close() # i think this is recommended... read about it, it is probably gc'd next loop?
+
+        # if the line is text...
+        else:
+            text_lines.put(op_line)
+
 
         linenum += 1
 
@@ -588,6 +596,7 @@ def urwid_main():
         if key in ("enter"):
             # this really should be in some 'handled_input' function or something
             submitted_command = bytes(txt.edit_text, "utf-8")
+            global_game_state.command_history.append(submitted_command)
             logging.info(submitted_command)
 
             # maybe timestamped as its own output stream, so it can be turned off on certain windows
@@ -600,7 +609,17 @@ def urwid_main():
             # not sure if sending this has a buffer? or is it lag in the receive side...
             gamesock.sendall(submitted_command + b'\n')
             if submitted_command in [b'exit', b'quit']:
-                raise Exception("Client has exited, use exception to cleanup for now.")
+                raise Exception('Client has exited, use exception to cleanup for now.')
+            return
+
+        if key in ("up"):
+            input_box.set_edit_text(global_game_state.command_history[-1])
+            input_box.set_edit_pos(len(txt.edit_text))
+            return
+
+        if key in ("down"):
+            input_box.set_edit_text('')
+            input_box.set_edit_pos(len(txt.edit_text))
             return
 
         if key in ("ctrl q", "ctrl Q"):
@@ -609,6 +628,7 @@ def urwid_main():
 
         input_box.set_edit_text("unknown key: " + repr(key))
         input_box.set_edit_pos(len(txt.edit_text))
+        return
 
     '''
     # supposed to fix focus loss, i don't have that issue yet
