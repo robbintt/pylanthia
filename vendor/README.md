@@ -1,5 +1,7 @@
 # Vendor Dependencies
 
+Each vendor dependency should be explicitly added to .gitignore
+
 ## Lich
 The lich install goes here in `./lich/`.
 
