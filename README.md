@@ -11,7 +11,10 @@ A terminal-based dragonrealms client in Python.
 
 ### Lich setup
 
-1. Get lich running
+See [[docs/lich.md]]
+
+- Lich commands seem to be run by using an escape, e.g. `\;rocks`, `\;killall`. 
+- I don't remember this, so need to check game logs and pylanthia regex...
 
 
 ### Using Python 3 with virtualenv
