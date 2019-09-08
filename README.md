@@ -13,7 +13,7 @@ A terminal-based dragonrealms client in Python.
 
 See [[docs/lich.md]]
 
-- Lich commands seem to be run by using an escape, e.g. `\;rocks`, `\;killall`. 
+- Lich commands seem to be run by using an escape, e.g. `\;rocks`, `\;killall`.
 - I don't remember this, so need to check game logs and pylanthia regex...
 
 
@@ -26,6 +26,10 @@ See [[docs/lich.md]]
 
 
 ### Dockerized setup
+
+Docker is pretty good for this, I think. The only reason lich needs some privileges is to
+proxy the game connection port. This makes docker a pretty good choice, since you can run
+both lich and pylanthia in the same container, and the host doesn't need hijacked.
 
 1. Dockerfile specs
   1. need lich scripts - both managed and local
