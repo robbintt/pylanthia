@@ -7,3 +7,5 @@ services:
     volumes:
       - ./vendor/lich:/lich:consistent
       - .:/pylanthia:consistent
+    entrypoint: "/bin/bash -c"
+    command: "/pylanthia/start.sh"

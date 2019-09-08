@@ -2,11 +2,17 @@
 
 A terminal-based dragonrealms client in Python.
 
-## Setup
+## Docker Setup
 
-1. Clone the repo
-1. Set up a virtualenv and activate it
-1. Run `pylanthia.py`
+This needs improved to run multiple instances with different configs from the same install.
+
+Also I want to get rid of the pipenv install every single startup...
+
+- Clone this repo
+- Go into vendor and run `./setup.sh`
+- Fill in your `config.py`
+- Run `docker-compose up` to start the service
+- I think I need to do a first-time setup of dependency.lic and other lich scripts??
 
 
 ### Lich setup
