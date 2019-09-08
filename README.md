@@ -16,6 +16,8 @@ See [[docs/lich.md]]
 - Lich commands seem to be run by using an escape, e.g. `\;rocks`, `\;killall`.
 - I don't remember this, so need to check game logs and pylanthia regex...
 
+- There was some lich first time setup that might require automation each time the docker image is created. Hopefully idempotent.
+
 
 ### Using Python 3 with virtualenv
 

@@ -1,0 +1,9 @@
+version: '3'
+services:
+  pylanthia:
+    build: .
+    ports:
+      - "4901:4901"
+    volumes:
+      - ./vendor/lich:/lich:consistent
+      - .:/pylanthia:consistent
