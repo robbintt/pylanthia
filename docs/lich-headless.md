@@ -27,12 +27,21 @@ I know that lich runs in stormfront... so what's going on?
 
 # Running lich
 
+Headless mode: commented out the require line for gtk, around line 500+ in lich.rbw
+
 Use manual game mode `-g` with `-s`  stormfront mode: `ruby lich/lich.rbw -s --game=DR -g dr.simutronics.net:4901`
 
-- commented out the require line for gtk, around line 500+ in lich.rbw
 - you cannot use `ruby lich.rbw -s --dragonrealms` to get the stormfront game string, it has a fixme flag and exits.
 
 - ran `ruby lich/lich.rbw --dragonrealms` from root's home directory
+
+
+## I think I am using this script to run lich as explained above
+
+```
+root@pylanthia-dev:~/clones/lich# cat lich.sh
+ruby lich.rbw -s --game=DR -g dr.simutronics.net:4901
+```
 
 
 ## Setup
