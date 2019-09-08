@@ -2,6 +2,40 @@
 
 A terminal-based dragonrealms client in Python.
 
+## Setup
+
+1. Clone the repo
+1. Set up a virtualenv and activate it
+1. Run `pylanthia.py`
+
+
+### Lich setup
+
+1. Get lich running
+
+
+### Using Python 3 with virtualenv
+
+- install Python 3
+- `virtualenv -p python3 env3`
+- `. env3/bin/activate`
+- `pip install -r requirements.txt`
+
+
+### Dockerized setup
+
+1. Dockerfile specs
+  1. need lich scripts - both managed and local
+  1. need lich installed and on path... how?
+  1. probably install pylanthia via pip?
+  1. some secrets / config storage for pylanthia
+
+
+1. Ideally set up a few docker entrypoints
+  1. `setup`: maybe a config wizard, maybe just drop you in bash in pylanthia folder
+  1. pylanthia entrypoint - login to dragonrealms via pylanthia with lich activated
+    - config secrets: ideally use envvars, config, or manual entry outside of the docker container
+
 
 ## Goal
 
@@ -60,14 +94,6 @@ Provide many of the useful features, including scripting, of dragonrealms client
 1. Scoll `up` and `down` command history would be nice
   - `left` could clear the line
   - `right` would clear the `rt_command_queue`
-
-
-## Quickstart: Python 3 Environment with `virtualenv`
-
-- install Python 3
-- `virtualenv -p python3 env3`
-- `. env3/bin/activate`
-- `pip install -r requirements.txt`
 
 
 ## Simulating windows
