@@ -530,8 +530,8 @@ def parse_events(parser, root_element, still_parsing):
             # even though the xml feeder is still correctly feeding it inside the parent
             # intentionally still passing: popBold
             # for now: put all xml lines not in xml_actions
-            logging.info(b"xml failed to parse " + etree.tostring(e))
-            text_lines.put((('text', b'RAW:' + etree.tostring(e)),)) # tostring is making a bytes string
+            logging.info(b"XML Parse Failed:RAW=" + etree.tostring(e))
+            #text_lines.put((('text', b'RAW:' + etree.tostring(e)),)) # tostring is making a bytes string
             # we could do something custom here, like log the missing xml_action for later use
             pass
 
