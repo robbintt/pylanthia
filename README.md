@@ -26,3 +26,9 @@ See [[docs/lich.md]]
 - I don't remember this, so need to check game logs and pylanthia regex...
 
 - There was some lich first time setup that might require automation each time the docker image is created. Hopefully idempotent.
+
+
+## Current Dev Direction
+
+1. `pylanthia.py` needs broken into modules to be more digestible
+2. Logging and Event Handling need improved, see [[docs/xml-handling.md]]
