@@ -2,6 +2,10 @@
 
 A terminal-based dragonrealms client in Python.
 
+## Play Instructions
+
+Once set up, simply `docker-compose run pylanthia` to start the service.
+
 ## Docker Setup
 
 This needs improved to run multiple instances with different configs from the same install.
@@ -11,7 +15,7 @@ Also I want to get rid of the pipenv install every single startup...
 - Clone this repo
 - Go into vendor and run `./setup.sh`
 - Fill in your `config.py`
-- Run `docker-compose up` to start the service
+- Run `docker-compose up` to create the docker container
 - I think I need to do a first-time setup of dependency.lic and other lich scripts??
 
 

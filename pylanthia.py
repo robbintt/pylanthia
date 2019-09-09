@@ -693,7 +693,7 @@ def get_tcp_lines():
             # store the rest on the queue
             for line in tcp_buffer_by_lines:
                 tcp_lines.put(line)
-                    
+
             #logging.info("tcp lines processed: {}".format(len(tcp_buffer)))
         else:
             #logging.info("tcp line has no newline: {}".format(tcp_buffer))
@@ -928,7 +928,7 @@ def urwid_main():
 
             # format the status line with the current content values
             status_line_output = status_line_string.format(**status_line_contents)
-        
+
             # set thae status line
             mainframe.contents[1][0].original_widget.set_text(status_line_output)
 
@@ -960,8 +960,8 @@ def urwid_main():
             if len(player_lines) < view_buffer_size:
                 _min_slice = 0
             else:
-                _min_slice = len(player_lines) - view_buffer_size 
-            
+                _min_slice = len(player_lines) - view_buffer_size
+
             # technique for slicing with a deque
             view_buffer = itertools.islice(player_lines, _min_slice, len(player_lines))
             #view_buffer = player_lines[_min_slice:]
@@ -1042,7 +1042,7 @@ if __name__ == '__main__':
     player_lines = deque() # process the xml into a player log, which can also be a player view
 
     quit_event = threading.Event() # set this flag with quit_event.set() to quit from main thread
-    
+
     GAME_KEY = get_game_key(eaccess_host, eaccess_port, username, password)
 
     # hopefully we can reuse this to reload the game if it breaks

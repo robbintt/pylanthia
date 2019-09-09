@@ -66,16 +66,17 @@ def get_game_key(host, port, username, password):
 
 
     # doesn't work, need to restart the whole eaccess connection
-    tries = 1
-    while tries > 0:
+    TRIES = 1
+    current_try = TRIES # set it up
+    while current_try > 0:
         response_parts = get_login_key(username, hashed_password)
         if len(response_parts) == 5:
             break
         else:
-            tries -= 1
+            current_try -= 1
             time.sleep(5)
     else:
-        raise(Exception("Login key attempt failed 3 times!"))
+        raise(Exception("Login key attempt failed {} times!".format(TRIES)))
 
 
     if response_parts[0] != b'A':
@@ -83,7 +84,6 @@ def get_game_key(host, port, username, password):
         pass # this should probably throw an Exception
 
     KEY = response_parts[3] # here ya go
-    print(type(KEY))
 
     # choose game (could specify DR, DRF, DRT, DRX? - check), not sure if necessary
     sock.sendall(b'G\t' + gamestring + b'\n')
@@ -91,7 +91,7 @@ def get_game_key(host, port, username, password):
     tcp_buffer = bytes()
     while b'\n' not in tcp_buffer:
         tcp_buffer += sock.recv(64)
-    print(tcp_buffer)
+    #print(tcp_buffer)
 
     # give character names, if you want it for validation
     sock.sendall(b'C\n')
