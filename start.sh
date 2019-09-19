@@ -8,4 +8,4 @@ ruby /lich/lich.rbw -s --game=DR -g dr.simutronics.net:4901 &
 
 sleep 3
 
-cd /pylanthia && pipenv install && pipenv run python3 pylanthia.py
+cd /pylanthia && pipenv sync && pipenv run python3 pylanthia.py
