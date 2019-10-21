@@ -2,20 +2,14 @@
 
 '''
 import threading
-import queue
-
 import time
-import itertools
-import re
 import datetime
 import logging
 import os
 
-
 # this is not thread safe... need Queue.Queue
 # Queue.Queue uses collections.deque and adds thread safety
 from collections import deque
-from itertools import islice
 # lowercase in python3, fixup all deques and remove this comment
 import queue
 
@@ -25,16 +19,14 @@ from config import eaccess_host, eaccess_port, username, password, character, ga
 from lib import eaccess
 from lib import setup_game_connection
 from lib import get_tcp_lines
-from lib import chop_xml_and_text
-from lib import xml_parser
+from lib import text_processing
 from lib import urwid_ui
 
-BUF_PROCESS_SPEED = 0.01 # this is a timer for the buffer view creation thread
 COMMAND_PROCESS_SPEED = 0.3 # max speed that commands are submitted at
 MAX_IDLE_TIME = 60*60*2  # 60*60  # 60 minutes
 
 # set up logging into one place for now
-# see xml_parser.py for best practice importing the logger
+# see lib/xml_parser.py for best practice importing the logger
 # from: https://stackoverflow.com/a/15735146
 log_filename = "{}_log.{}.txt".format('dr', datetime.datetime.now().strftime('%Y-%m-%d.%H:%M:%S'))
 log_directory = "logs"
@@ -116,70 +108,6 @@ def process_command_queue(global_game_state, tcp_lines):
             current_roundtime = int(global_game_state.roundtime - global_game_state.time)
             if current_roundtime == 0:
                 global_game_state.command_queue.put(global_game_state.rt_command_queue.get())
-                
-
-def preprocess_tcp_lines(tcp_lines, preprocessed_lines):
-    ''' Process the TCP lines into labelled lines for the XML parser
-
-    This parsing runs in its own thread
-    '''
-    while True:
-
-        # only process a line if one exists
-        # don't really need this check since Queue.get() is blocking by default
-        # may want it to give a spinning wheel/timeout in the else
-        if not tcp_lines.empty():
-            preprocessed_lines.put(chop_xml_and_text.chop_xml_and_text_from_line(tcp_lines.get()))
-        else:
-            pass
-
-        # this sleep throttles max line processing speed
-        time.sleep(BUF_PROCESS_SPEED)
-
-
-def process_lines(preprocessed_lines, player_lines):
-    ''' process tcp lines back to front, works in a separate thread
-
-    This function takes raw TCP lines and delivers annotated XML elements and text segments
-
-    What if we use a preprocessor on the queue to create chop_xml_and_text_from_line's results
-    THEN we have an XML puller thread that pulls those and processes them into XML events and another Queue
-    THEN the `another queue` goes into the text filters and is displayed
-
-    1. XML puller needs to be able to pull both XML and text lines (for multiline html text body)
-
-
-    The DR output has some XML and some text.
-    Sometimes a element stands alone, multiple elements per line. 
-    Sometimes a element feeds into the next line.
-    Sometimes XML output is multiline.
-    Sometimes multiple XML structures are added on the same line.
-
-
-    Goal:
-    We need to be able to split a single line of multiple XML documents up.
-    We also need to detect when multiple lines are one XML document.
-
-    processing the xml-style tokens is weird
-        ex. inventory streamWindow - primes inventory, but there are still more indicators...
-            the final xml before the inv text is: <pushStream id='inv'/>Your worn items are:\r\n
-            then after the inv text is: <popStream/>\r\n
-    if i could process this multiline token, it would solve some of my issue
-    a ton of tokens are duplicate and can just be dropped
-    ''' 
-    
-    while True:
-        # don't really need this check since Queue.get() is blocking by default
-        # TODO: try getting rid of it sometime...
-        if not preprocessed_lines.empty():
-            xml_parser.process_game_xml(preprocessed_lines, text_lines, global_game_state)
-        else:
-            pass
-
-        # this sleep throttles max line processing speed
-        time.sleep(BUF_PROCESS_SPEED)
-
-
 
 
 def gametime_incrementer(global_game_state):
@@ -223,11 +151,11 @@ if __name__ == '__main__':
     # hopefully we can reuse this to reload the game if it breaks
     gamesock = setup_game_connection.setup_game_connection(server_addr, server_port, GAME_KEY, frontend_settings)
 
-    preprocess_lines_thread = threading.Thread(target=preprocess_tcp_lines, args=(tcp_lines, preprocessed_lines))
+    preprocess_lines_thread = threading.Thread(target=text_processing.preprocess_tcp_lines, args=(tcp_lines, preprocessed_lines))
     preprocess_lines_thread.daemon = True
     preprocess_lines_thread.start()
 
-    process_lines_thread = threading.Thread(target=process_lines, args=(preprocessed_lines, text_lines))
+    process_lines_thread = threading.Thread(target=text_processing.process_lines, args=(preprocessed_lines, text_lines, global_game_state))
     process_lines_thread.daemon = True
     process_lines_thread.start()
 
