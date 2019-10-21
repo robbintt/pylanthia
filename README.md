@@ -44,3 +44,67 @@ See [[docs/lich.md]]
 
 1. `pylanthia.py` needs broken into modules to be more digestible
 2. Logging and Event Handling need improved, see [[docs/xml-handling.md]]
+
+
+## Some notes
+
+
+The client is implemented with socket and urwid.
+
+Global variables may not yet be locked properly for threading,
+especially when appending sent text to the stream.
+
+There is some confusion about how much information newlines from the
+server actually hold. The server does not seem to provide newlines between
+consecutive xml tags so some data needs to be extracted from the stream
+
+The stream can also be logged directly and replayed in order to test certain behavior.
+This is probably the best place to start.
+
+Processing steps before player sees lines:
+
+    1. convert xml lines to events or 'window streams'
+        - some streams:
+            - room
+            - backpack
+            - inventory
+            - health snapshot
+            - roundtime
+            - prompt/time
+            - logins, logouts
+            - deaths, raises, etc?
+    3. 'ignore filter' the lines
+        - a line is ignored if a substring is found in it
+    4. 'color filter' the lines: 
+        - substring search, potential for regex search
+        - a line can be colored or just the substring/regex section of the string
+        - need conversion of hex colors downscaled for terminal? mapping?
+        - customize background and foreground color, per-character basis
+    5. need persistent data structure to store 'ignore filters' and 'color filters'
+        - SQLite or flat config file
+        - maybe a flat config file at first so it can be configured outside the game
+        - ability to hot reload the flat config
+        - how will a player use filters to create new streams?
+            - this is a killer feature
+
+
+TCP Lines:
+    - tcp lines are logged by appending to a file
+
+Display lines:
+    - player display lines should be displayed and logged after all processing
+    - processing could all occur in the same thread?
+    - Where are display lines consumed?
+        - urwid loop thread
+        - logging method?
+
+
+
+
+TODO:
+    - log per character name
+    - make a 'last played' log that is easier to tail for debugging and building xml
+    - separate xml parsing into its own data structure, consider sqlite if huge
+
+
+
