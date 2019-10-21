@@ -1,7 +1,6 @@
 ''' A terminal-based python client for dragonrealms
 
 '''
-import socket
 import threading
 import queue
 
@@ -28,6 +27,7 @@ from config import *
 from eaccess import get_game_key
 from lib import chop_xml_and_text
 from lib import get_tcp_lines
+from lib import setup_game_connection
 
 SCREEN_REFRESH_SPEED = 0.1 # how fast to redraw the screen from the buffer
 BUF_PROCESS_SPEED = 0.01 # this is a timer for the buffer view creation thread
@@ -880,28 +880,6 @@ def urwid_main():
     loop.run()
 
 
-def setup_game_connection(server_addr, server_port, key, frontend_settings):
-    ''' initialize the connection and return the game socket
-    '''
-
-    gamesock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server = (server_addr, int(server_port))
-    gamesock.connect(server)
-
-    time.sleep(1) # would be better to get an ACK of some sort before sending the token...
-    gamesock.sendall(key)
-    gamesock.sendall(b'\n')
-    gamesock.sendall(frontend_settings)
-    gamesock.sendall(b'\n')
-
-    # needs a second to connect or else it hangs, then you need to send a newline or two...
-    time.sleep(1)
-    gamesock.sendall(b'\n')
-    gamesock.sendall(b'\n')
-
-    return gamesock
-
-
 def gametime_incrementer(global_game_state):
     '''
     '''
@@ -926,6 +904,8 @@ def gametime_incrementer(global_game_state):
 
 if __name__ == '__main__':
     ''' Set up the connection and start the threads
+
+    note: preprocess_lines_thread.daemon = True # closes when main thread ends
     '''
     global_game_state = GlobalGameState()
 
@@ -939,26 +919,26 @@ if __name__ == '__main__':
     GAME_KEY = get_game_key(eaccess_host, eaccess_port, username, password)
 
     # hopefully we can reuse this to reload the game if it breaks
-    gamesock = setup_game_connection(server_addr, server_port, GAME_KEY, frontend_settings)
+    gamesock = setup_game_connection.setup_game_connection(server_addr, server_port, GAME_KEY, frontend_settings)
 
     preprocess_lines_thread = threading.Thread(target=preprocess_tcp_lines, args=(tcp_lines, preprocessed_lines))
-    preprocess_lines_thread.daemon = True # closes when main thread ends
+    preprocess_lines_thread.daemon = True
     preprocess_lines_thread.start()
 
     process_lines_thread = threading.Thread(target=process_lines, args=(preprocessed_lines, text_lines))
-    process_lines_thread.daemon = True # closes when main thread ends
+    process_lines_thread.daemon = True
     process_lines_thread.start()
 
     tcp_thread = threading.Thread(target=get_tcp_lines.get_tcp_lines, args=(tcp_lines, gamesock))
-    tcp_thread.daemon = True #  closes when main thread ends
+    tcp_thread.daemon = True
     tcp_thread.start()
 
     command_queue_thread = threading.Thread(target=process_command_queue, args=(global_game_state, tcp_lines))
-    command_queue_thread.daemon = True #  closes when main thread ends
+    command_queue_thread.daemon = True
     command_queue_thread.start()
 
     gametime_thread = threading.Thread(target=gametime_incrementer, args=(global_game_state,))
-    gametime_thread.daemon = True #  closes when main thread ends
+    gametime_thread.daemon = True
     gametime_thread.start()
 
     # start the UI and UI refresh thread
