@@ -1,6 +1,6 @@
 '''
 '''
-import lxml
+from lxml import etree
 import re
 import logging
 
@@ -95,13 +95,13 @@ def parse_events(parser, root_element, still_parsing, text_lines, global_game_st
 
             # catchall
             else:
-                text_lines.put((('text', lxml.etree.tostring(elem)),)) # tostring is making a bytes string
+                text_lines.put((('text', etree.tostring(elem)),)) # tostring is making a bytes string
                 text_lines.put((('text', elem.text),)) # tostring is making a bytes string
 
         def pushBold(elem):
             ''' change this line to a color preset, can hardcode for now
             '''
-            #text_lines.put((('text', lxml.etree.tostring(e)),)) # tostring is making a bytes string
+            #text_lines.put((('text', etree.tostring(e)),)) # tostring is making a bytes string
             return
         
         def popBold(elem):
@@ -133,11 +133,11 @@ def parse_events(parser, root_element, still_parsing, text_lines, global_game_st
                     pass
                 # catchall for elements WITH 'id' attr
                 else:
-                    text_lines.put((('text', DEBUG_PREFIX + lxml.etree.tostring(elem)),)) # tostring is making a bytes string
+                    text_lines.put((('text', DEBUG_PREFIX + etree.tostring(elem)),)) # tostring is making a bytes string
 
             # catchall
             else:
-                text_lines.put((('text', b'pushStream: ' + lxml.etree.tostring(elem)),)) # tostring is making a bytes string
+                text_lines.put((('text', b'pushStream: ' + etree.tostring(elem)),)) # tostring is making a bytes string
 
             return
 
@@ -152,7 +152,7 @@ def parse_events(parser, root_element, still_parsing, text_lines, global_game_st
 
             # catchall
             else:
-                text_lines.put((('text', b'pushStream: ' + lxml.etree.tostring(elem)),)) # tostring is making a bytes string
+                text_lines.put((('text', b'pushStream: ' + etree.tostring(elem)),)) # tostring is making a bytes string
 
             return
 
@@ -160,7 +160,7 @@ def parse_events(parser, root_element, still_parsing, text_lines, global_game_st
         def clearStream(elem):
             ''' xml element is not used
             '''
-            #text_lines.put((('text', lxml.etree.tostring(elem)),)) # tostring is making a bytes string
+            #text_lines.put((('text', etree.tostring(elem)),)) # tostring is making a bytes string
             return
 
         def roundTime(elem):
@@ -190,20 +190,20 @@ def parse_events(parser, root_element, still_parsing, text_lines, global_game_st
                         text_lines.put((('text', bytes(elem.text, 'utf-8')),))
                     pass
                 elif elem.attrib['id'] == 'roomDesc':
-                    logging.info(b"room text: " + lxml.etree.tostring(elem))
+                    logging.info(b"room text: " + etree.tostring(elem))
                     #logging.info(b"room text: " + bytes(elem, 'ascii'))
                     #line = (('text', elem.text),)
                     #text_lines.put(line)
-                    text_lines.put((('text', lxml.etree.tostring(elem)),))
+                    text_lines.put((('text', etree.tostring(elem)),))
                     pass
                 #attrib == id catchall
                 else:
                     pass
-                    text_lines.put((('text', DEBUG_PREFIX + lxml.etree.tostring(elem)),)) # tostring is making a bytes string
+                    text_lines.put((('text', DEBUG_PREFIX + etree.tostring(elem)),)) # tostring is making a bytes string
 
             # catchall
             else:
-                text_lines.put((('text', b'preset no id:' + lxml.etree.tostring(elem)),)) # tostring is making a bytes string
+                text_lines.put((('text', b'preset no id:' + etree.tostring(elem)),)) # tostring is making a bytes string
                 pass
             return
 
@@ -216,11 +216,11 @@ def parse_events(parser, root_element, still_parsing, text_lines, global_game_st
                     pass
                 #attrib == id catchall
                 else:
-                    text_lines.put((('text', lxml.etree.tostring(elem)),)) # tostring is making a bytes string
+                    text_lines.put((('text', etree.tostring(elem)),)) # tostring is making a bytes string
 
             # catchall
             else:
-                text_lines.put((('text', lxml.etree.tostring(elem)),)) # tostring is making a bytes string
+                text_lines.put((('text', etree.tostring(elem)),)) # tostring is making a bytes string
             return
 
 
@@ -235,7 +235,7 @@ def parse_events(parser, root_element, still_parsing, text_lines, global_game_st
 
             # catchall
             else:
-                text_lines.put((('text', b'style: ' + lxml.etree.tostring(elem)),)) # tostring is making a bytes string
+                text_lines.put((('text', b'style: ' + etree.tostring(elem)),)) # tostring is making a bytes string
             return
 
         def resource(elem):
@@ -246,7 +246,7 @@ def parse_events(parser, root_element, still_parsing, text_lines, global_game_st
 
             # catchall
             else:
-                text_lines.put((('text', lxml.etree.tostring(elem)),)) # tostring is making a bytes string
+                text_lines.put((('text', etree.tostring(elem)),)) # tostring is making a bytes string
             return
 
 
@@ -284,8 +284,8 @@ def parse_events(parser, root_element, still_parsing, text_lines, global_game_st
             # even though the xml feeder is still correctly feeding it inside the parent
             # intentionally still passing: popBold
             # for now: put all xml lines not in xml_actions
-            logging.info(b"XML Parse Failed:RAW=" + lxml.etree.tostring(e))
-            #text_lines.put((('text', b'RAW:' + lxml.etree.tostring(e)),)) # tostring is making a bytes string
+            logging.info(b"XML Parse Failed:RAW=" + etree.tostring(e))
+            #text_lines.put((('text', b'RAW:' + etree.tostring(e)),)) # tostring is making a bytes string
             # we could do something custom here, like log the missing xml_action for later use
             pass
 
@@ -377,7 +377,7 @@ def process_game_xml(preprocessed_lines, text_lines, global_game_state):
             '''
 
             events = ('start', 'end',) # other events might be useful too? what are my options?
-            parser = lxml.etree.XMLPullParser(events, recover=True) # can we log recoveries somewhere?
+            parser = etree.XMLPullParser(events, recover=True) # can we log recoveries somewhere?
             
             # feed lines until the root element is closed
             root_element = None
