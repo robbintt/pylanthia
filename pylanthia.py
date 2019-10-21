@@ -19,11 +19,13 @@ from itertools import islice
 # lowercase in python3, fixup all deques and remove this comment
 import queue
 
-from config import *
-from eaccess import get_game_key
-from lib import chop_xml_and_text
-from lib import get_tcp_lines
+# used for setup_game_connection, eaccess
+from config import eaccess_host, eaccess_port, username, password, character, gamestring, server_addr, server_port, frontend_settings
+
+from lib import eaccess
 from lib import setup_game_connection
+from lib import get_tcp_lines
+from lib import chop_xml_and_text
 from lib import xml_parser
 from lib import urwid_ui
 
@@ -216,7 +218,7 @@ if __name__ == '__main__':
 
     quit_event = threading.Event() # set this flag with quit_event.set() to quit from main thread
 
-    GAME_KEY = get_game_key(eaccess_host, eaccess_port, username, password)
+    GAME_KEY = eaccess.get_game_key(eaccess_host, eaccess_port, username, password, character, gamestring)
 
     # hopefully we can reuse this to reload the game if it breaks
     gamesock = setup_game_connection.setup_game_connection(server_addr, server_port, GAME_KEY, frontend_settings)

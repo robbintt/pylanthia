@@ -7,9 +7,7 @@ SGE Protocol: https://gswiki.play.net/SGE_protocol/saved_posts
 import socket
 import time
 
-from config import eaccess_host, eaccess_port, username, password, character, gamestring
-
-def get_game_key(host, port, username, password):
+def get_game_key(host, port, username, password, character, gamestring):
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server = (host, int(port))
@@ -130,7 +128,9 @@ if __name__ == '__main__':
 
     ACCOUNT, GAME, CHARACTER - these must all be provided... probably just in config
     '''
-    game_key = get_game_key(eaccess_host, eaccess_port, username, password)
+    from config import eaccess_host, eaccess_port, username, password, character, gamestring
+
+    game_key = get_game_key(eaccess_host, eaccess_port, username, password, character, gamestring)
 
     print(game_key)
 
