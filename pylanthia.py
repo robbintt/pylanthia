@@ -86,12 +86,11 @@ import queue
 from config import *
 from eaccess import get_game_key
 from lib import chop_xml_and_text
+from lib import get_tcp_lines
 
-TCP_BUFFER_SLEEP = 0.01 # not sure if i want to sleep this or not
 SCREEN_REFRESH_SPEED = 0.1 # how fast to redraw the screen from the buffer
 BUF_PROCESS_SPEED = 0.01 # this is a timer for the buffer view creation thread
 COMMAND_PROCESS_SPEED = 0.3 # max speed that commands are submitted at
-BUFSIZE = 16 # This seems to give a better response time than 128 bytes
 MAX_IDLE_TIME = 60*60*2  # 60*60  # 60 minutes
 
 # set up logging into one place for now
@@ -665,42 +664,6 @@ def process_game_xml(preprocessed_lines, text_lines):
     return
 
 
-def get_tcp_lines():
-    ''' receive text and xml into a buffer and split on newlines
-
-    this function does lock tcp_lines
-    do we need a timer to give it back to the GIL?
-
-    this thing does not sleep, i don't think it needs to
-    the socket waits around a lot
-    '''
-    tcp_buffer = bytes()
-    while True:
-        tcp_chunk = gamesock.recv(BUFSIZE)
-
-        # this is kind of a lot of writes... should be fine though
-        with open(tcplog_location, 'a') as f:
-            f.write(tcp_chunk.decode('utf-8'))
-
-        # the buffer could f.read the last 4000 characters or something.. what's faster?
-        # right now the buffer grows without limit, which is not the best...
-        tcp_buffer += tcp_chunk
-
-        if b'\n' in tcp_buffer:
-            tcp_buffer_by_lines = tcp_buffer.split(b'\r\n')
-            # grab the last one back
-            tcp_buffer = tcp_buffer_by_lines.pop()
-            # store the rest on the queue
-            for line in tcp_buffer_by_lines:
-                tcp_lines.put(line)
-
-            #logging.info("tcp lines processed: {}".format(len(tcp_buffer)))
-        else:
-            #logging.info("tcp line has no newline: {}".format(tcp_buffer))
-            time.sleep(TCP_BUFFER_SLEEP)
-            pass
-
-
 def urwid_main():
     ''' just the main process for urwid... needs renamed and fixed up
     '''
@@ -1056,7 +1019,7 @@ if __name__ == '__main__':
     process_lines_thread.daemon = True # closes when main thread ends
     process_lines_thread.start()
 
-    tcp_thread = threading.Thread(target=get_tcp_lines)
+    tcp_thread = threading.Thread(target=get_tcp_lines.get_tcp_lines, args=(tcp_lines, tcplog_location, gamesock))
     tcp_thread.daemon = True #  closes when main thread ends
     tcp_thread.start()
 
