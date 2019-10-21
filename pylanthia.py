@@ -72,17 +72,6 @@ class GlobalGameState:
         return
 
 
-# dump tcp separately
-tcplog_filename = "{}_tcplog.{}.txt".format('dr', datetime.datetime.now().strftime('%Y-%m-%d.%H:%M:%S'))
-tcplog_directory = "tcplogs"
-tcplog_location = os.path.join(log_directory, tcplog_directory, tcplog_filename)
-
-# check this once here, needs to be elsewhere though
-if not os.path.exists(tcplog_location):
-    with open(tcplog_location, 'w') as f:
-        f.write('')
-
-
 def process_command_queue(global_game_state, tcp_lines):
     ''' process game commands from the submit queue
 
@@ -960,7 +949,7 @@ if __name__ == '__main__':
     process_lines_thread.daemon = True # closes when main thread ends
     process_lines_thread.start()
 
-    tcp_thread = threading.Thread(target=get_tcp_lines.get_tcp_lines, args=(tcp_lines, tcplog_location, gamesock))
+    tcp_thread = threading.Thread(target=get_tcp_lines.get_tcp_lines, args=(tcp_lines, gamesock))
     tcp_thread.daemon = True #  closes when main thread ends
     tcp_thread.start()
 

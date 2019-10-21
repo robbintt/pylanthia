@@ -3,8 +3,20 @@
 This method is for processing raw tcp bytes into lines
 '''
 import time
+import datetime
+import os
 
-def get_tcp_lines(tcp_lines, tcplog_location, gamesock, BUFSIZE=16, TCP_BUFFER_SLEEP=0.01):
+# this probably should be in a config file
+log_directory = "logs"  # also defined in pylanthia... needs fixed up
+tcplog_filename = "{}_tcplog.{}.txt".format('dr', datetime.datetime.now().strftime('%Y-%m-%d.%H:%M:%S'))
+tcplog_directory = "tcplogs"
+tcplog_location = os.path.join(log_directory, tcplog_directory, tcplog_filename)
+if not os.path.exists(tcplog_location):
+    with open(tcplog_location, 'w') as f:
+        f.write('')
+
+
+def get_tcp_lines(tcp_lines, gamesock, BUFSIZE=16, TCP_BUFFER_SLEEP=0.01):
     ''' receive text and xml into a buffer and split on newlines
 
     default buffer size is 16, 128 kind of sucks, it makes a big difference
