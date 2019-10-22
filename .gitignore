@@ -13,3 +13,4 @@ logs/
 
 
 config.py
+*.key

@@ -6,8 +6,9 @@ SGE Protocol: https://gswiki.play.net/SGE_protocol/saved_posts
 '''
 import socket
 import time
+import os
 
-def get_game_key(host, port, username, password, character, gamestring):
+def get_game_key(host, port, username, password, character, gamestring, keyfile):
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server = (host, int(port))
@@ -117,9 +118,12 @@ def get_game_key(host, port, username, password, character, gamestring):
     tcp_buffer = bytes()
     while b'\n' not in tcp_buffer:
         tcp_buffer += sock.recv(64)
+    # character key is now attached to the game key
     print("ready to play: ", tcp_buffer)
 
-    # character key is now attached to the game key
+    # store the last game key
+    with open(keyfile, 'w') as f:
+        f.write(KEY.decode('utf-8'))
     return KEY
 
 
