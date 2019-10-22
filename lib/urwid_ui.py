@@ -12,6 +12,45 @@ import urwid_readline
 
 SCREEN_REFRESH_SPEED = 0.1 # how fast to redraw the screen from the buffer
 
+
+def construct_view_buffer(text_lines, player_lines, view_buffer_size=30):
+    '''
+    # grab at most view_buffer_size lines per refresh
+    # it makes sense for the view contents constructor to be elsewhere anyways
+    '''
+    i = 0
+    while i < view_buffer_size:
+        # careful this is blocking, if blocked we would want to just return what we have...
+        # and even return some stuff from the last buffer attempt too!
+        # hmm requires a little thinking!
+        # for now we could make it a list and grow it forever...
+        # then we can slice the last bit for the view again
+        try:
+            new_line = text_lines.get_nowait()
+            # temporarily rebuild player_lines for viewing
+            new_line = b''.join([content for _, content in new_line])
+            player_lines.append(new_line)
+        except queue.Empty:
+            # return the player_lines when empty or 'full'/done
+            break
+        i += 1
+
+    # slice a view buffer off of player_lines
+    # if the view buffer is too long, urwid currently cuts off the bottom, which is terrible... how to fix?
+    # can we tap into the current height of the flow widget and give that as the view buffer size?
+    # think about it later..
+    if len(player_lines) < view_buffer_size:
+        _min_slice = 0
+    else:
+        _min_slice = len(player_lines) - view_buffer_size
+
+    # technique for slicing with a deque
+    view_buffer = itertools.islice(player_lines, _min_slice, len(player_lines))
+    #view_buffer = player_lines[_min_slice:]
+
+    return view_buffer
+
+
 def urwid_main(global_game_state, player_lines, text_lines, quit_event):
     ''' just the main process for urwid... needs renamed and fixed up
     '''
@@ -243,45 +282,12 @@ def urwid_main(global_game_state, player_lines, text_lines, quit_event):
             # set thae status line
             mainframe.contents[1][0].original_widget.set_text(status_line_output)
 
-            # grab at most view_buffer_size lines per refresh
-            view_buffer_size = fixed_size_for_now
-            # i guess this needs its own buffer. maybe its own function
-            # it makes sense for the view contents constructor to be elsewhere anyways
-            i = 0
-            while i < view_buffer_size:
-                # careful this is blocking, if blocked we would want to just return what we have...
-                # and even return some stuff from the last buffer attempt too!
-                # hmm requires a little thinking!
-                # for now we could make it a list and grow it forever...
-                # then we can slice the last bit for the view again
-                try:
-                    new_line = text_lines.get_nowait()
-                    # temporarily rebuild player_lines for viewing
-                    new_line = b''.join([content for _, content in new_line])
-                    player_lines.append(new_line)
-                except queue.Empty:
-                    # return the player_lines when empty or 'full'/done
-                    break
-                i += 1
-
-            # slice a view buffer off of player_lines
-            # if the view buffer is too long, urwid currently cuts off the bottom, which is terrible... how to fix?
-            # can we tap into the current height of the flow widget and give that as the view buffer size?
-            # think about it later..
-            if len(player_lines) < view_buffer_size:
-                _min_slice = 0
-            else:
-                _min_slice = len(player_lines) - view_buffer_size
-
-            # technique for slicing with a deque
-            view_buffer = itertools.islice(player_lines, _min_slice, len(player_lines))
-            #view_buffer = player_lines[_min_slice:]
 
 
             # ideally a 4000 line buffer view of the current game would be updated elsewhere and just displayed here
             # scrollable would also be really nice
             # right now it just passes the current lines
-            main_view_text = b'\n'.join(view_buffer)
+            main_view_text = b'\n'.join(construct_view_buffer(text_lines, player_lines, fixed_size_for_now))
 
             # the contents object is a list of (widget, option) tuples
             # http://urwid.org/reference/widget.html#urwid.Pile
