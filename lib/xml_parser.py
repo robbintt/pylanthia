@@ -341,6 +341,10 @@ def process_game_xml(preprocessed_lines, text_lines, global_game_state):
                 failing_command = global_game_state.command_history.get()
                 logging.info(b'Command failed from RT: ' + failing_command)
                 global_game_state.rt_command_queue.put(failing_command)
+                # put it back on the history too, it still was submitted
+                # otherwise on subsequent fails, we start getting offset
+                # history should be write only, is there a better queue action?
+                global_game_state.command_history.put(failing_command)
         except Exception as e:
             logging.info("failed: ", e)
 
