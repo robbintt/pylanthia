@@ -14,8 +14,9 @@ Also I want to get rid of the pipenv install every single startup...
 - Fill in your `config.py`
 - run pylanthia: `docker-compose run pylanthia`
 - follow: https://github.com/rpherbig/dr-scripts/wiki/First-Time-Setup
-- Next, I turned roomnumbers on: `\;roomnumbers`
-  - was able to see roomnumbers from the map database
+  - be sure to \;repository download-mapdb
+  - Next, I turned roomnumbers on: `\;roomnumbers`
+    - validate it: are you able to see roomnumbers from the map database?
 - next set up autostarts with autostart syntax
   - \;autostart add --global roomnumbers
 
