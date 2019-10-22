@@ -60,6 +60,16 @@ Develop a draft of this after moving view buffers out of `urwid_ui`.
 
 How does electron install work with a python backend and a docker compose `run` launching lich?
 
+- I don't really think docker is necessary since I can just set the host to localhost and change the port in lich.
+- How would I test this? Feed my pylanthia client a totally different port, then run lich subprocess with the incoming port as a cli option... but wait
+  - The problem with lich is also the ruby setup, which the docker container handles.  So port management is not the only issue.
+
+How can I handle python dependencies and ruby dependencies inside electron? I would want to rpc between dockerized processes within electron
+
+Looks like it would be an electron + react + redux-electron + python subprocess + zerorpc.
+
+Article: https://www.fyears.org/2017/02/electron-as-gui-of-python-apps-updated.html
+
 
 ## Some notes - move these
 
