@@ -9,3 +9,11 @@ services:
       - .:/pylanthia:consistent
     entrypoint: "/bin/bash -c"
     command: "/pylanthia/start.sh"
+  debug:
+    build: .
+    ports:
+      - "4901:4901"
+    volumes:
+      - ./vendor/lich:/lich:consistent
+      - .:/pylanthia:consistent
+    entrypoint: "/bin/bash"
