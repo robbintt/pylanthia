@@ -56,7 +56,6 @@ def game_connection_controller():
 
     if GAME_KEY:
         try:
-            logging.debug('Attempting to open with cached GAME_KEY: {}'.format(GAME_KEY))
             gamesock = _open_game_socket(GAME_KEY)
         # cached game key was expired
         except BrokenPipeError as e:
