@@ -10,15 +10,14 @@ Also I want to get rid of the pipenv install every single startup...
 
 - Clone this repo
 - Go into vendor and run `./setup.sh`
+  - you may still need to copy dependency.lic from dr-scripts... not sure
 - Fill in your `config.py`
-- Run `docker-compose build` to create the docker container
+- run pylanthia: `docker-compose run pylanthia`
 - follow: https://github.com/rpherbig/dr-scripts/wiki/First-Time-Setup
 - Next, I turned roomnumbers on: `\;roomnumbers`
   - was able to see roomnumbers from the map database
-- next set up autostarts:
-  - ;e autostart('roomnumbers')
-
-PROBLEM: for some reason i need to run dependency every time? it seems linked to an issue where repository doesn't run on start
+- next set up autostarts with autostart syntax
+  - \;autostart add --global roomnumbers
 
 
 ## Play Instructions
