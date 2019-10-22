@@ -8,30 +8,17 @@ This needs improved to run multiple instances with different configs from the sa
 
 Also I want to get rid of the pipenv install every single startup...
 
-Problem: i think the default example config has the wrong host and port (sf port) and we need to use 4901 or whatever.
-
-Problem: how do i get the map db in place without copying from old install?
-
-Problem: Need to detect lich.rb or lich.rbw and use whichever is there.
-
-Problem: How can I get the dependency ssl key to work? maybe file an issue on the scripts gh repo.
-
 - Clone this repo
 - Go into vendor and run `./setup.sh`
 - Fill in your `config.py`
 - Run `docker-compose build` to create the docker container
-- I think I need to do a first-time setup of dependency.lic and other lich scripts??
-  - manually add `dependency.lic` as `repository.lic` ssl key won't work
-  - follow: https://github.com/rpherbig/dr-scripts/wiki/First-Time-Setup
-- at this point you have an upgraded lich fork `rbw` file
-  - you must change the invocation to reflect the new filename `lich.rbw` in `start.sh`
-- remember repository doesn't work so you have to download everything...
-  - i then manually copied a map database into lich/data/DR/ from my old install
-  - i then manually specified lich.rbw in the `start.sh` entrypoint command
+- follow: https://github.com/rpherbig/dr-scripts/wiki/First-Time-Setup
 - Next, I turned roomnumbers on: `\;roomnumbers`
   - was able to see roomnumbers from the map database
-- next set up autostarts from the `dependency.lic` first-time-setup (linked above)
+- next set up autostarts:
   - ;e autostart('roomnumbers')
+
+PROBLEM: for some reason i need to run dependency every time? it seems linked to an issue where repository doesn't run on start
 
 
 ## Play Instructions
