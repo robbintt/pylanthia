@@ -8,6 +8,14 @@ This needs improved to run multiple instances with different configs from the sa
 
 Also I want to get rid of the pipenv install every single startup...
 
+Problem: i think the default example config has the wrong host and port (sf port) and we need to use 4901 or whatever.
+
+Problem: how do i get the map db in place without copying from old install?
+
+Problem: Need to detect lich.rb or lich.rbw and use whichever is there.
+
+Problem: How can I get the dependency ssl key to work? maybe file an issue on the scripts gh repo.
+
 - Clone this repo
 - Go into vendor and run `./setup.sh`
 - Fill in your `config.py`
@@ -46,7 +54,14 @@ See [[docs/lich.md]]
 2. Logging and Event Handling need improved, see [[docs/xml-handling.md]]
 
 
-## Some notes
+## Electron Client
+
+Develop a draft of this after moving view buffers out of `urwid_ui`.
+
+How does electron install work with a python backend and a docker compose `run` launching lich?
+
+
+## Some notes - move these
 
 
 The client is implemented with socket and urwid.
