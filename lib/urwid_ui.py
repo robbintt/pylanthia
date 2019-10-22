@@ -5,10 +5,13 @@ import threading
 import queue
 import itertools
 import re
+import textwrap
 
 import urwid
 import urwid_readline
 
+import logging
+logging.getLogger(__name__)
 
 SCREEN_REFRESH_SPEED = 0.1 # how fast to redraw the screen from the buffer
 
@@ -28,11 +31,17 @@ def construct_view_buffer(text_lines, player_lines, view_buffer_size=30):
         try:
             new_line = text_lines.get_nowait()
             # temporarily rebuild player_lines for viewing
-            new_line = b''.join([content for _, content in new_line])
-            player_lines.append(new_line)
         except queue.Empty:
             # return the player_lines when empty or 'full'/done
             break
+        else:
+            new_line_bytes = b''.join([content for _, content in new_line])
+            # lets try wrapping the text at 80 lines temporarily
+            # this is just a hack to make urwid behave a bit better
+            new_line_parts = textwrap.wrap(new_line_bytes.decode('utf-8'), 80)
+            # stupid deque is unnecessary
+            for _part in new_line_parts:
+                player_lines.append(_part)
         i += 1
 
     # slice a view buffer off of player_lines
@@ -95,7 +104,7 @@ def urwid_main(global_game_state, player_lines, text_lines, quit_event):
     # whether the compass arrow last received game state
     # currently just used to display them all as a placeholder
 
-    fixed_size_for_now = 30
+    fixed_size_for_now = 40
     main_window = urwid.Text('') # initalize the window empty
     input_box = urwid_readline.ReadlineEdit('> ', '') # pretty sure urwid_readline package needs Python3
 
@@ -287,7 +296,7 @@ def urwid_main(global_game_state, player_lines, text_lines, quit_event):
             # ideally a 4000 line buffer view of the current game would be updated elsewhere and just displayed here
             # scrollable would also be really nice
             # right now it just passes the current lines
-            main_view_text = b'\n'.join(construct_view_buffer(text_lines, player_lines, fixed_size_for_now))
+            main_view_text = '\n'.join(construct_view_buffer(text_lines, player_lines, fixed_size_for_now))
 
             # the contents object is a list of (widget, option) tuples
             # http://urwid.org/reference/widget.html#urwid.Pile
