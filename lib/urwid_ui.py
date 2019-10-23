@@ -15,6 +15,9 @@ logging.getLogger(__name__)
 
 SCREEN_REFRESH_SPEED = 0.1 # how fast to redraw the screen from the buffer
 
+highlight_list = [
+        'You feel fully prepared'
+        ]
 
 def construct_view_buffer(text_lines, player_lines, view_buffer_size=30):
     '''
@@ -34,14 +37,25 @@ def construct_view_buffer(text_lines, player_lines, view_buffer_size=30):
         except queue.Empty:
             # return the player_lines when empty or 'full'/done
             break
-        else:
-            new_line_bytes = b''.join([content for _, content in new_line])
-            # lets try wrapping the text at 80 lines temporarily
-            # this is just a hack to make urwid behave a bit better
-            new_line_parts = textwrap.wrap(new_line_bytes.decode('utf-8'), 80)
-            # stupid deque is unnecessary
-            for _part in new_line_parts:
-                player_lines.append(_part)
+
+        new_line_bytes = b''.join([content for _, content in new_line])
+        # lets try wrapping the text at 80 lines temporarily
+        # this is just a hack to make urwid behave a bit better
+        new_line_parts = textwrap.wrap(new_line_bytes.decode('utf-8'), 80)
+        # stupid deque is unnecessary
+        for _part in new_line_parts:
+            _part = _part + '\n'
+            for highlight in highlight_list:
+                if highlight in _part:
+                    _part = ('highlight', _part)
+                    break # i guess just 1 highlight per string for now
+                    # this is such trash
+                    # how am i supposed to highlight multiple parts?
+                    # write a recursive function? what about substrings?
+                    # there needs to be a color mask or something on the string index
+                    #head, sep, tail = part.partition(highlight)
+                    #part = (head, ('highlight', sep), tail)
+            player_lines.append(_part)
         i += 1
 
     # slice a view buffer off of player_lines
@@ -57,7 +71,14 @@ def construct_view_buffer(text_lines, player_lines, view_buffer_size=30):
     view_buffer = itertools.islice(player_lines, _min_slice, len(player_lines))
     #view_buffer = player_lines[_min_slice:]
 
-    return view_buffer
+    # just coerce to get out of this stupid isliced deque i don't need
+    view_buffer_list = list()
+    for line in view_buffer:
+        view_buffer_list.append(line)
+
+    if not view_buffer_list:
+        view_buffer_list.append('')
+    return view_buffer_list
 
 
 def urwid_main(global_game_state, player_lines, text_lines, quit_event):
@@ -76,6 +97,15 @@ def urwid_main(global_game_state, player_lines, text_lines, quit_event):
     uc_dr = '\u2198'
     uc_dl = '\u2199'
     '''
+
+    color_palette = [
+        ('banner', '', '', '', '#fff', 'g35'),
+        ('statusbar', 'white', 'black'),
+        ('highlight', 'white', '', '', 'g0', 'g35'),
+        ('white', 'white', '', '', 'g0', 'g35'),
+        ('inside', '', '', '', 'g0', 'g35'),
+        ('outside', '', '', '', 'g0', 'g35'),
+        ('bg', '', '', '', 'g35', '#fff'),]
 
     # note that these are ordered in Python 3.6+, this assumes you are running 3.6+ !!!
     arrows = {}
@@ -237,6 +267,7 @@ def urwid_main(global_game_state, player_lines, text_lines, quit_event):
     # reference: http://urwid.org/reference/main_loop.html
     loop = urwid.MainLoop(
         mainframe,
+        color_palette,
         handle_mouse=False,
         unhandled_input=lambda key: unhandled_input(input_box, key))
 
@@ -289,14 +320,15 @@ def urwid_main(global_game_state, player_lines, text_lines, quit_event):
             status_line_output = status_line_string.format(**status_line_contents)
 
             # set thae status line
-            mainframe.contents[1][0].original_widget.set_text(status_line_output)
+            mainframe.contents[1][0].original_widget.set_text(('statusbar', status_line_output))
 
 
 
             # ideally a 4000 line buffer view of the current game would be updated elsewhere and just displayed here
             # scrollable would also be really nice
             # right now it just passes the current lines
-            main_view_text = '\n'.join(construct_view_buffer(text_lines, player_lines, fixed_size_for_now))
+            #main_view_text = '\n'.join(construct_view_buffer(text_lines, player_lines, fixed_size_for_now))
+            main_view_text = construct_view_buffer(text_lines, player_lines, fixed_size_for_now)
 
             # the contents object is a list of (widget, option) tuples
             # http://urwid.org/reference/widget.html#urwid.Pile
