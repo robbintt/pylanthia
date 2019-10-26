@@ -1,0 +1,4 @@
+# excludes list: one substring per line
+# please just use game text, no regex yet
+
+The flame opals adorning the triquetra symbol of your blighted gold bracelet
