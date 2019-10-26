@@ -1,0 +1,5 @@
+# highlights template: partial line is fine
+# empty lines are fine, comment start with #
+
+You feel fully prepared to cast your spell.
+You feel intense strain as you try to manipulate the mana streams to form this pattern, and you are not certain that you will have enough mental stamina to complete it.

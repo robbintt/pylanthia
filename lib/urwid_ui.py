@@ -15,11 +15,7 @@ logging.getLogger(__name__)
 
 SCREEN_REFRESH_SPEED = 0.1 # how fast to redraw the screen from the buffer
 
-highlight_list = [
-        'You feel fully prepared'
-        ]
-
-def construct_view_buffer(text_lines, player_lines, view_buffer_size=30):
+def construct_view_buffer(text_lines, player_lines, highlight_list, view_buffer_size=30):
     '''
     # grab at most view_buffer_size lines per refresh
     # it makes sense for the view contents constructor to be elsewhere anyways
@@ -81,7 +77,7 @@ def construct_view_buffer(text_lines, player_lines, view_buffer_size=30):
     return view_buffer_list
 
 
-def urwid_main(global_game_state, player_lines, text_lines, quit_event):
+def urwid_main(global_game_state, player_lines, text_lines, highlight_list, quit_event):
     ''' just the main process for urwid... needs renamed and fixed up
     '''
 
@@ -328,7 +324,7 @@ def urwid_main(global_game_state, player_lines, text_lines, quit_event):
             # scrollable would also be really nice
             # right now it just passes the current lines
             #main_view_text = '\n'.join(construct_view_buffer(text_lines, player_lines, fixed_size_for_now))
-            main_view_text = construct_view_buffer(text_lines, player_lines, fixed_size_for_now)
+            main_view_text = construct_view_buffer(text_lines, player_lines, highlight_list, fixed_size_for_now)
 
             # the contents object is a list of (widget, option) tuples
             # http://urwid.org/reference/widget.html#urwid.Pile

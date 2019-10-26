@@ -36,6 +36,13 @@ def main():
     tcp_lines = queue.Queue() # split the tcp buffer on '\r\n'
     preprocessed_lines = queue.Queue()
     text_lines = queue.Queue()
+
+    # some issue when writing from submodules, maybe related to file handle, doubt it
+    # here we make the file, which may make the handle accessible? worth a shot
+    logging.debug("Initating logfile.")
+
+
+    highlight_list = text_processing.line_config_processor('data/highlights.txt')
     
     # player lines is temporary, used to generate a view for urwid_ui
     player_lines = deque() # process the xml into a player log, which can also be a player view
@@ -69,7 +76,7 @@ def main():
 
     # start the UI and UI refresh thread
     # urwid must have its own time.sleep somewhere in its loop, since it doesn't dominate everything
-    urwid_ui.urwid_main(global_game_state, player_lines, text_lines, quit_event)
+    urwid_ui.urwid_main(global_game_state, player_lines, text_lines, highlight_list, quit_event)
 
 
 if __name__ == '__main__':

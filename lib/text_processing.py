@@ -2,6 +2,23 @@
 '''
 import time
 from lib import xml_parser
+import re
+import logging
+
+logging.getLogger(__name__)
+
+
+def line_config_processor(filename):
+    ''' Process a file into lines for ignores, highlights, etc.
+    '''
+    user_configured_lines = list()
+    with open(filename) as f:
+        for line in f:
+            line = line.strip()
+            if line and line[0] != '#' and not re.match(r'^\s+$', line):
+                user_configured_lines.append(line)
+    return user_configured_lines
+
 
 def chop_xml_and_text_from_line(line):
     ''' Given a line chop it into xml and text sections

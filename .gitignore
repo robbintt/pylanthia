@@ -8,9 +8,9 @@ __pycache__/
 env/
 env3/
 
-data/
 logs/
 
+data/highlights.txt
 
 config.py
 *.key
