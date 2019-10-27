@@ -10,6 +10,8 @@ import textwrap
 import urwid
 import urwid_readline
 
+from vendor.scroll.scroll import ScrollBar, Scrollable
+
 import logging
 logging.getLogger(__name__)
 
@@ -21,7 +23,7 @@ def construct_view_buffer(text_lines, player_lines, highlight_list, excludes_lis
     # it makes sense for the view contents constructor to be elsewhere anyways
     '''
     i = 0
-    while i < view_buffer_size:
+    while i < 4000:
         # careful this is blocking, if blocked we would want to just return what we have...
         # and even return some stuff from the last buffer attempt too!
         # hmm requires a little thinking!
@@ -47,7 +49,7 @@ def construct_view_buffer(text_lines, player_lines, highlight_list, excludes_lis
 
         # lets try wrapping the text at 80 lines temporarily
         # this is just a hack to make urwid behave a bit better
-        new_line_parts = textwrap.wrap(new_line_str, 80)
+        new_line_parts = textwrap.wrap(new_line_str, 200) # from 80
         # stupid deque is unnecessary
         for _part in new_line_parts:
             _part = _part + '\n'
@@ -142,14 +144,15 @@ def urwid_main(global_game_state, player_lines, text_lines, highlight_list, excl
     # whether the compass arrow last received game state
     # currently just used to display them all as a placeholder
 
-    fixed_size_for_now = 40
-    main_window = urwid.Text('') # initalize the window empty
+    fixed_size_for_now = 4000
+    main_window_buffer_size = 40
+    main_window = ScrollBar(Scrollable(urwid.Text(''))) # initalize the window empty
     input_box = urwid_readline.ReadlineEdit('> ', '') # pretty sure urwid_readline package needs Python3
 
     status_line = urwid.Text(status_line_string)
 
     mainframe = urwid.Pile([
-        ('weight', fixed_size_for_now, urwid.Filler(main_window, valign='bottom')),
+        ('weight', fixed_size_for_now, urwid.Filler(main_window, height=main_window_buffer_size, valign='bottom')),
         ('fixed', 1, urwid.Filler(status_line, 'bottom')),
         ('fixed', 1, urwid.Filler(input_box, 'bottom')),
     ], focus_item=2)
@@ -340,7 +343,7 @@ def urwid_main(global_game_state, player_lines, text_lines, highlight_list, excl
 
             # the contents object is a list of (widget, option) tuples
             # http://urwid.org/reference/widget.html#urwid.Pile
-            mainframe.contents[0][0].original_widget.set_text(main_view_text)
+            mainframe.contents[0][0].original_widget._original_widget._original_widget.set_text(main_view_text)
 
             loop.draw_screen()
 
