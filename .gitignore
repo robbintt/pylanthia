@@ -10,7 +10,9 @@ env3/
 
 logs/
 
-data/highlights.txt
+data/highlights.txt # this doesn't work
+# to ignore highlights changes, probaly need an example file
+# highlights.txt will be tracked if it's added (currently added)
 
 config.py
 *.key
