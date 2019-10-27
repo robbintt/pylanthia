@@ -10,6 +10,6 @@ echo "Using lich path: $LICH_PATH"
 # must manually specify the rbw after upgrading
 ruby $LICH_PATH -s --game=DR -g dr.simutronics.net:4901 &
 
-sleep 2
+sleep 3 # 2 was too low
 
 cd /pylanthia && pipenv sync && pipenv run python3 pylanthia.py
