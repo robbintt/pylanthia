@@ -342,20 +342,12 @@ def urwid_main(global_game_state, player_lines, text_lines, highlight_list, excl
             # http://urwid.org/reference/widget.html#urwid.Pile
             mainframe.contents[0][0].original_widget._original_widget._original_widget.set_text(main_view_text)
 
-            # update scroll position to bottom unless the person moved it
-            # this should really just record if the user has modified the
-            # scrollbar height and wait until they return it to max
-            # hacky, jump once you get past the position you dropped off at
+            # turn off autoscroll when the textbox is in focus
             scrollable_textbox = mainframe.contents[0][0].original_widget._original_widget
-            _scrollpos = scrollable_textbox.get_scrollpos()
-            if _scrollpos >=  global_game_state.urwid_scrollbar_last:
+            if mainframe.focus_position == 2:
+                # set and record the most recent position
                 scrollable_textbox.set_scrollpos(-1)
-                # record the last possible position
-                global_game_state.urwid_scrollbar_last = _scrollpos
-            '''
-            if mainframe.contents[0][0].original_widget._original_widget.get_scrollpos() != :
-                mainframe.contents[0][0].original_widget._original_widget.set_scrollpos(-1)
-            '''
+                global_game_state.urwid_scrollbar_last = scrollable_textbox.get_scrollpos()
 
             loop.draw_screen()
 
