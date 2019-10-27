@@ -40,6 +40,15 @@ See [[docs/lich.md]]
 1. `pylanthia.py` needs broken into modules to be more digestible
 2. Logging and Event Handling need improved, see [[docs/xml-handling.md]]
 
+### Buffer Bugs
+
+-  sometimes the buffer skips ahead, i assume it's 1 line ahead of my position
+  - this is best solved by changing the buffer manual mode detection method
+    - when you move the buffer a flag should be flipped until you go back to the end, then it should follow the end again
+- up/down is still unhandled, it needs handled by the urwid widget
+- is it possible to tap into widget height to fill the height? this would be really nice for filling the screen without overflowing up (if that still happens)
+
+
 ### Buffering windows
 
 The idea is to tab through windows and only see what you care about.
