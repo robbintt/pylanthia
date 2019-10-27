@@ -168,11 +168,21 @@ def urwid_main(global_game_state, player_lines, text_lines, highlight_list, excl
 
     def unhandled_input(txt, key):
         ''' 
+        much of this input should be handled in the pile or widgets inside the pile
         
         q: why is this called unhandled input if it is the input handler??
         a: ... urwid thing, this can probably be changed to whatever is appropriate, just use care
 
         '''
+
+        if key in ("tab"):
+            # rudimentary focus bouncer for now
+            # ideally focus bounce will toggle buffers in the future
+            if mainframe.focus_position == 2:
+                mainframe.focus_position = 0
+            else:
+                mainframe.focus_position = 2
+            return
 
         if key in ("enter"):
 
