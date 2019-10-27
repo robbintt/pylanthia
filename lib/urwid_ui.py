@@ -37,7 +37,7 @@ def construct_view_buffer(text_lines, player_lines, highlight_list, excludes_lis
             break
 
         # munge new_line and convert bytes->utf-8
-        new_line_str = b''.join([content for _, content in new_line]).decode('utf-8')
+        new_line_str = b''.join([content for _, content in new_line]).decode('utf-8')+'\n'
 
         _skip_excluded_line = False
         for exclude_substr in excludes_list:
@@ -47,31 +47,18 @@ def construct_view_buffer(text_lines, player_lines, highlight_list, excludes_lis
         if _skip_excluded_line == True:
             continue
 
-        # lets try wrapping the text at 80 lines temporarily
-        # this is just a hack to make urwid behave a bit better
-        new_line_parts = textwrap.wrap(new_line_str, 200) # from 80
-        # stupid deque is unnecessary
-        for _part in new_line_parts:
-            _part = _part + '\n'
-            # highlight should happen before splitting
-            # can we get rid of the splitting or no?
-            for highlight in highlight_list:
-                if highlight in _part:
-                    _part = ('highlight', _part)
-                    break # i guess just 1 highlight per string for now
-                    # this is such trash
-                    # how am i supposed to highlight multiple parts?
-                    # write a recursive function? what about substrings?
-                    # there needs to be a color mask or something on the string index
-                    #head, sep, tail = part.partition(highlight)
-                    #part = (head, ('highlight', sep), tail)
-            player_lines.append(_part)
+        for highlight in highlight_list:
+            if highlight in new_line_str:
+                new_line_str = ('highlight', new_line_str)
+                break # i guess just 1 highlight per string for now
+                # write a recursive function? what about substrings?
+                # there needs to be a color mask or something on the string index
+                # (white, 5, 7), (red, 6, 7) - apply in order so last gets precedence, use python slice positional
+
+        player_lines.append(new_line_str)
         i += 1
 
     # slice a view buffer off of player_lines
-    # if the view buffer is too long, urwid currently cuts off the bottom, which is terrible... how to fix?
-    # can we tap into the current height of the flow widget and give that as the view buffer size?
-    # think about it later..
     if len(player_lines) < view_buffer_size:
         _min_slice = 0
     else:
