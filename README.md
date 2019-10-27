@@ -40,6 +40,22 @@ See [[docs/lich.md]]
 1. `pylanthia.py` needs broken into modules to be more digestible
 2. Logging and Event Handling need improved, see [[docs/xml-handling.md]]
 
+### Buffering windows
+
+The idea is to tab through windows and only see what you care about.
+
+- basic modes:
+  - filter out of a window
+  - filter into a window
+  - substitute part of a line
+  - highlight a line
+
+### Updating pip
+
+- `pyenv install` needs `apt install zlib1g libsqlite3-dev libbz2-dev libffi-dev libreadline-dev libssl-dev` on ubuntu 18 ami
+- `PIP_REQUIRE_VIRTUALENV=false pyenv exec pip install pipenv`
+- now you can mess with your Pipfile and Pipfile.lock
+
 
 ## Electron Client
 

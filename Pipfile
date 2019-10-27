@@ -8,7 +8,7 @@ verify_ssl = true
 [packages]
 lxml = "==4.2.5"
 urwid = "==2.0.1"
-urwid-readline = "==0.8"
+urwid-readline = "==0.10"
 
 [requires]
 python_version = "3.7"
