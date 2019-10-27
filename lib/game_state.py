@@ -25,6 +25,8 @@ class GlobalGameState:
         self.command_queue = queue.Queue()
         self.rt_command_queue = queue.Queue()
 
+        self.urwid_scrollbar_last = 0
+
 
     def reset_exits(self):
         self.exits = { 'n': False,
