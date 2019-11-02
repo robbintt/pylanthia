@@ -99,7 +99,7 @@ def preprocess_tcp_lines(tcp_lines, preprocessed_lines, BUF_PROCESS_SPEED=0.01):
         time.sleep(BUF_PROCESS_SPEED)
 
 
-def process_lines(preprocessed_lines, text_lines, global_game_state, BUF_PROCESS_SPEED=0.01):
+def process_lines(preprocessed_lines, text_lines, game_state, BUF_PROCESS_SPEED=0.01):
     ''' process tcp lines back to front, works in a separate thread
 
     This function takes raw TCP lines and delivers annotated XML elements and text segments
@@ -134,7 +134,7 @@ def process_lines(preprocessed_lines, text_lines, global_game_state, BUF_PROCESS
         # don't really need this check since Queue.get() is blocking by default
         # TODO: try getting rid of it sometime...
         if not preprocessed_lines.empty():
-            xml_parser.process_game_xml(preprocessed_lines, text_lines, global_game_state)
+            xml_parser.process_game_xml(preprocessed_lines, text_lines, game_state)
         else:
             pass
 

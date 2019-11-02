@@ -1,4 +1,21 @@
 # excludes list: one substring per line
+# i could also publish the excludes to a different window, like an excludes buffer...
 # please just use game text, no regex yet
 
 The flame opals adorning the triquetra symbol of your blighted gold bracelet
+A dull crimson glow radiates from
+exudes life and vitality, rutilant sparks dancing around
+Brisk, swirling winds whorl around
+finishes playing a
+
+# next are too complex, needs regex
+# Ascheton begins a quiet gavotte on his copper zills.
+
+# these are the ones i did use that can be improved with regex
+# future: use regex to find these with more precision
+# A dull crimson glow radiates from Szoengi's wooden medallion.
+# The bandages binding Glitter's left hand become useless and fall apart.
+# Synaxil exudes life and vitality, rutilant sparks dancing around him.
+# Brisk, swirling winds whorl around Grenhart, forming minute ice crystals that are strewn through the air like stars hung in a winter sky.
+# Ascheton finishes playing a quiet gavotte on his copper zills.
+# Ascheton begins a quiet gavotte on his copper zills.  # too complex, needs regex

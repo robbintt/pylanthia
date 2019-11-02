@@ -12,7 +12,7 @@ import datetime
 from collections import deque 
 
 from lib import setup_game_connection
-from lib import game_state
+from lib.game_state import GlobalGameState
 from lib import gametime_incrementor
 from lib import get_tcp_lines
 from lib import text_processing
@@ -32,7 +32,7 @@ def main():
 
     note: preprocess_lines_thread.daemon = True # closes when main thread ends
     '''
-    global_game_state = game_state.GlobalGameState()
+    game_state = GlobalGameState()
     tcp_lines = queue.Queue() # split the tcp buffer on '\r\n'
     preprocessed_lines = queue.Queue()
     text_lines = queue.Queue()
@@ -51,7 +51,7 @@ def main():
     # TODO: this doesn't seem to work? or if it does, it isn't clean...
     quit_event = threading.Event() # set this flag with quit_event.set() to quit from main thread
 
-    # this should probably be initialized in global_game_state
+    # this should probably be initialized in game_state
     # we should probably try to reacquire a socket if we lose it
     gamesock = setup_game_connection.game_connection_controller()
 
@@ -59,7 +59,7 @@ def main():
     preprocess_lines_thread.daemon = True
     preprocess_lines_thread.start()
 
-    process_lines_thread = threading.Thread(target=text_processing.process_lines, args=(preprocessed_lines, text_lines, global_game_state))
+    process_lines_thread = threading.Thread(target=text_processing.process_lines, args=(preprocessed_lines, text_lines, game_state))
     process_lines_thread.daemon = True
     process_lines_thread.start()
 
@@ -67,17 +67,17 @@ def main():
     tcp_thread.daemon = True
     tcp_thread.start()
 
-    command_queue_thread = threading.Thread(target=command_processing.process_command_queue, args=(global_game_state, tcp_lines, gamesock))
+    command_queue_thread = threading.Thread(target=command_processing.process_command_queue, args=(game_state, tcp_lines, gamesock))
     command_queue_thread.daemon = True
     command_queue_thread.start()
 
-    gametime_thread = threading.Thread(target=gametime_incrementor.gametime_incrementer, args=(global_game_state,))
+    gametime_thread = threading.Thread(target=gametime_incrementor.gametime_incrementer, args=(game_state,))
     gametime_thread.daemon = True
     gametime_thread.start()
 
     # start the UI and UI refresh thread
     # urwid must have its own time.sleep somewhere in its loop, since it doesn't dominate everything
-    urwid_ui.urwid_main(global_game_state, player_lines, text_lines, highlight_list, excludes_list, quit_event)
+    urwid_ui.urwid_main(game_state, player_lines, text_lines, highlight_list, excludes_list, quit_event)
 
 
 if __name__ == '__main__':

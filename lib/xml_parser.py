@@ -7,7 +7,7 @@ import logging
 logging.getLogger(__name__)
 
 
-def parse_events(parser, root_element, still_parsing, text_lines, global_game_state):
+def parse_events(parser, root_element, still_parsing, text_lines, game_state):
     ''' When an element ends, determine what to do
 
     these functions govern what is put in the text_lines Queue
@@ -77,11 +77,11 @@ def parse_events(parser, root_element, still_parsing, text_lines, global_game_st
 
             seems like the xml parser is processing the children seperately too
             '''
-            global_game_state.reset_exits()
+            game_state.reset_exits()
             for direction in elem.iterchildren('dir'):
                 if direction.attrib.get('value'):
-                    if direction.attrib.get('value') in list(global_game_state.exits.keys()):
-                        global_game_state.exits[direction.attrib.get('value')] = True
+                    if direction.attrib.get('value') in list(game_state.exits.keys()):
+                        game_state.exits[direction.attrib.get('value')] = True
 
             return
 
@@ -168,7 +168,7 @@ def parse_events(parser, root_element, still_parsing, text_lines, global_game_st
             '''
             # if they forget roundTime 'value', then we don't update the state
             if elem.attrib.get('value'):
-                global_game_state.roundtime = int(elem.attrib.get('value'))
+                game_state.roundtime = int(elem.attrib.get('value'))
             return
 
         def prompt(elem):
@@ -176,8 +176,8 @@ def parse_events(parser, root_element, still_parsing, text_lines, global_game_st
             '''
             # if they forget time, then we don't update the state
             if elem.attrib.get('time'):
-                global_game_state.reported_time = int(elem.attrib.get('time'))
-                global_game_state.time = global_game_state.reported_time
+                game_state.reported_time = int(elem.attrib.get('time'))
+                game_state.time = game_state.reported_time
             return
 
         def preset(elem):
@@ -297,7 +297,7 @@ def parse_events(parser, root_element, still_parsing, text_lines, global_game_st
     return root_element, still_parsing
 
 
-def process_game_xml(preprocessed_lines, text_lines, global_game_state):
+def process_game_xml(preprocessed_lines, text_lines, game_state):
     ''' Get any game state out of the XML, return a replacement line
     
     We now want to process any XML line fully as xml using the obj.text and obj.tail values
@@ -338,13 +338,13 @@ def process_game_xml(preprocessed_lines, text_lines, global_game_state):
             # so it's not this simple, we need to be able to give commands some index
             # but lets not YET add a bigger data structure for each command in the command history - YET
             if command_failed:
-                failing_command = global_game_state.command_history.get()
+                failing_command = game_state.command_history.get()
                 logging.info(b'Command failed from RT: ' + failing_command)
-                global_game_state.rt_command_queue.put(failing_command)
+                game_state.rt_command_queue.put(failing_command)
                 # put it back on the history too, it still was submitted
                 # otherwise on subsequent fails, we start getting offset
                 # history should be write only, is there a better queue action?
-                global_game_state.command_history.put(failing_command)
+                game_state.command_history.put(failing_command)
         except Exception as e:
             logging.info("failed: ", e)
 
@@ -394,7 +394,7 @@ def process_game_xml(preprocessed_lines, text_lines, global_game_state):
                 parser.feed(nextline)
 
                 # examine the parser and determine if we should feed more lines or close...
-                root_element, still_parsing = parse_events(parser, root_element, still_parsing, text_lines, global_game_state)
+                root_element, still_parsing = parse_events(parser, root_element, still_parsing, text_lines, game_state)
                 
                 # avoid double increment in parent while loop
                 if still_parsing:

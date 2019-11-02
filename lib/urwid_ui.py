@@ -23,7 +23,8 @@ def construct_view_buffer(text_lines, player_lines, highlight_list, excludes_lis
     # it makes sense for the view contents constructor to be elsewhere anyways
     '''
     i = 0
-    while i < 4000:
+    # hardcoded, shared with fixed_size_for_now during testing
+    while i < 1000:
         # careful this is blocking, if blocked we would want to just return what we have...
         # and even return some stuff from the last buffer attempt too!
         # hmm requires a little thinking!
@@ -78,7 +79,7 @@ def construct_view_buffer(text_lines, player_lines, highlight_list, excludes_lis
     return view_buffer_list
 
 
-def urwid_main(global_game_state, player_lines, text_lines, highlight_list, excludes_list, quit_event):
+def urwid_main(game_state, player_lines, text_lines, highlight_list, excludes_list, quit_event):
     ''' just the main process for urwid... needs renamed and fixed up
     '''
 
@@ -117,7 +118,7 @@ def urwid_main(global_game_state, player_lines, text_lines, highlight_list, excl
 
     exit_string = ' '
     for k, v in arrows.items():
-        if global_game_state.exits.get(k):
+        if game_state.exits.get(k):
             exit_string += v
         else:
             exit_string += ' ' * len(v)  # preserve spacing from glyph
@@ -131,7 +132,7 @@ def urwid_main(global_game_state, player_lines, text_lines, highlight_list, excl
     # whether the compass arrow last received game state
     # currently just used to display them all as a placeholder
 
-    fixed_size_for_now = 4000
+    fixed_size_for_now = 1000
     main_window_buffer_size = 40
     main_window = ScrollBar(Scrollable(urwid.Text(''))) # initalize the window empty
     input_box = urwid_readline.ReadlineEdit('> ', '') # pretty sure urwid_readline package needs Python3
@@ -173,7 +174,7 @@ def urwid_main(global_game_state, player_lines, text_lines, highlight_list, excl
 
         if key in ("enter"):
 
-            global_game_state.history_scroll_mode = False  # toggle history scroll mode off
+            game_state.history_scroll_mode = False  # toggle history scroll mode off
 
             if len(txt.edit_text) == 0:
                 ''' ignore an empty command
@@ -185,7 +186,7 @@ def urwid_main(global_game_state, player_lines, text_lines, highlight_list, excl
             # allow multiple commands per line
             # this doesn't work for command history
             # maybe there should be an input history
-            global_game_state.input_history.append(submitted_command)
+            game_state.input_history.append(submitted_command)
             # replace newlines with semicolons so we can process them homogeneously
             # may need to work with urwid-rlwrap for custom multiline paste features
             # otherwise the major use case for this string replacement is not covered
@@ -202,7 +203,7 @@ def urwid_main(global_game_state, player_lines, text_lines, highlight_list, excl
             for _s_c in submitted_commands:
                 if len(_s_c) > 0:
                     _s_c = bytes(_s_c, "utf-8")
-                    global_game_state.command_queue.put(_s_c)
+                    game_state.command_queue.put(_s_c)
 
             txt.set_edit_text('')
             txt.set_edit_pos(0)
@@ -212,26 +213,26 @@ def urwid_main(global_game_state, player_lines, text_lines, highlight_list, excl
         if key in ("up", "down"):
 
             # deal with the 0 history case here
-            if len(global_game_state.input_history) == 0:
+            if len(game_state.input_history) == 0:
                 return
 
             # enter history scroll mode until the user presses enter
-            if global_game_state.history_scroll_mode == False:
-                global_game_state.history_scroll_mode = True
-                global_game_state.input_history_counter = len(global_game_state.input_history) - 1
+            if game_state.history_scroll_mode == False:
+                game_state.history_scroll_mode = True
+                game_state.input_history_counter = len(game_state.input_history) - 1
 
             # don't do this if you just set it to true! (elif)
-            elif global_game_state.history_scroll_mode == True:
+            elif game_state.history_scroll_mode == True:
 
                 if key in ("up"):
-                    if global_game_state.input_history_counter > 0:
-                        global_game_state.input_history_counter -= 1
+                    if game_state.input_history_counter > 0:
+                        game_state.input_history_counter -= 1
 
                 if key in ("down"):
-                    if global_game_state.input_history_counter < len(global_game_state.input_history) - 1:
-                        global_game_state.input_history_counter += 1
+                    if game_state.input_history_counter < len(game_state.input_history) - 1:
+                        game_state.input_history_counter += 1
 
-            input_box.set_edit_text(global_game_state.input_history[global_game_state.input_history_counter])
+            input_box.set_edit_text(game_state.input_history[game_state.input_history_counter])
             input_box.set_edit_pos(len(txt.edit_text))
             return
 
@@ -249,8 +250,8 @@ def urwid_main(global_game_state, player_lines, text_lines, highlight_list, excl
             '''
             # need the mutex because this uses a function of the underlying deque
             # see: https://stackoverflow.com/a/6518011
-            with global_game_state.rt_command_queue.mutex:
-                global_game_state.rt_command_queue.queue.clear()
+            with game_state.rt_command_queue.mutex:
+                game_state.rt_command_queue.queue.clear()
             return
 
         # not working
@@ -296,7 +297,7 @@ def urwid_main(global_game_state, player_lines, text_lines, highlight_list, excl
 
             status_line_contents = dict()
             # calculate remaining roundtime
-            current_roundtime = int(global_game_state.roundtime - global_game_state.time)
+            current_roundtime = int(game_state.roundtime - game_state.time)
             if current_roundtime < 0:
                 current_roundtime = 0
             if current_roundtime < 10:
@@ -308,7 +309,7 @@ def urwid_main(global_game_state, player_lines, text_lines, highlight_list, excl
 
             exit_string = ''
             for k, v in arrows.items():
-                if global_game_state.exits.get(k):
+                if game_state.exits.get(k):
                     exit_string += v
                 else:
                     exit_string += ' ' * len(v)  # preserve spacing from glyph
@@ -318,8 +319,8 @@ def urwid_main(global_game_state, player_lines, text_lines, highlight_list, excl
 
             # show the roundtime stable indicator if both time and roundtime are reported
             # this will be false only when the displayed roundtime is based on projected time
-            # (global_game_state.time is projected time)
-            if global_game_state.reported_time >= global_game_state.roundtime:
+            # (game_state.time is projected time)
+            if game_state.reported_time >= game_state.roundtime:
                 status_line_contents['roundtime_stable'] = '.'
             else:
                 status_line_contents['roundtime_stable'] = ' '
@@ -331,23 +332,20 @@ def urwid_main(global_game_state, player_lines, text_lines, highlight_list, excl
             mainframe.contents[1][0].original_widget.set_text(('statusbar', status_line_output))
 
 
-
-            # ideally a 4000 line buffer view of the current game would be updated elsewhere and just displayed here
-            # scrollable would also be really nice
-            # right now it just passes the current lines
-            #main_view_text = '\n'.join(construct_view_buffer(text_lines, player_lines, fixed_size_for_now))
-            main_view_text = construct_view_buffer(text_lines, player_lines, highlight_list, excludes_list, fixed_size_for_now)
+            # we should cache this and only run it if there's something new in the queue
+            if not text_lines.empty():
+                game_state.main_view_text = construct_view_buffer(text_lines, player_lines, highlight_list, excludes_list, fixed_size_for_now)
 
             # the contents object is a list of (widget, option) tuples
             # http://urwid.org/reference/widget.html#urwid.Pile
-            mainframe.contents[0][0].original_widget._original_widget._original_widget.set_text(main_view_text)
+            mainframe.contents[0][0].original_widget._original_widget._original_widget.set_text(game_state.main_view_text)
 
             # turn off autoscroll when the textbox is in focus
             scrollable_textbox = mainframe.contents[0][0].original_widget._original_widget
             if mainframe.focus_position == 2:
                 # set and record the most recent position
                 scrollable_textbox.set_scrollpos(-1)
-                global_game_state.urwid_scrollbar_last = scrollable_textbox.get_scrollpos()
+                game_state.urwid_scrollbar_last = scrollable_textbox.get_scrollpos()
 
             loop.draw_screen()
 

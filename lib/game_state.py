@@ -26,6 +26,7 @@ class GlobalGameState:
         self.rt_command_queue = queue.Queue()
 
         self.urwid_scrollbar_last = 0
+        self.main_view_text = ''
 
 
     def reset_exits(self):
