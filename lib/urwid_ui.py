@@ -15,16 +15,17 @@ from vendor.scroll.scroll import ScrollBar, Scrollable
 import logging
 logging.getLogger(__name__)
 
-SCREEN_REFRESH_SPEED = 0.1 # how fast to redraw the screen from the buffer
-
 def construct_view_buffer(text_lines, player_lines, highlight_list, excludes_list, view_buffer_size=30):
     '''
     # grab at most view_buffer_size lines per refresh
     # it makes sense for the view contents constructor to be elsewhere anyways
     '''
     i = 0
-    # hardcoded, shared with fixed_size_for_now during testing
-    while i < 1000:
+    # this is the size of the buffer, but this processing could block showing it...
+    # it needs rethought along with the text_lines data structure and return of this function
+    # ideally we would only process each line once! why are we processing on every view refresh
+    # this was intentionally MVP'd but should be updated soon
+    while i < view_buffer_size:
         # careful this is blocking, if blocked we would want to just return what we have...
         # and even return some stuff from the last buffer attempt too!
         # hmm requires a little thinking!
@@ -79,7 +80,7 @@ def construct_view_buffer(text_lines, player_lines, highlight_list, excludes_lis
     return view_buffer_list
 
 
-def urwid_main(game_state, player_lines, text_lines, highlight_list, excludes_list, quit_event):
+def urwid_main(game_state, player_lines, text_lines, highlight_list, excludes_list, quit_event, screen_refresh_speed=0.05):
     ''' just the main process for urwid... needs renamed and fixed up
     '''
 
@@ -288,7 +289,7 @@ def urwid_main(game_state, player_lines, text_lines, highlight_list, excludes_li
 
             # do this first so that the urwid MainLoop 'loop' exists! otherwise too fast
             # it would be better to kick this off inside loop.run I think
-            time.sleep(SCREEN_REFRESH_SPEED)
+            time.sleep(screen_refresh_speed)
 
             # this really should be in the main thread...
             # urwid has event_loop that can probably handle this

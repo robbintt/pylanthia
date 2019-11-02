@@ -41,10 +41,12 @@ def main():
     # here we make the file, which may make the handle accessible? worth a shot
     logging.debug("Initating logfile.")
 
+    COMMAND_PROCESSING_SPEED = 0.05
+    SCREEN_REFRESH_SPEED = 0.05
 
     highlight_list = text_processing.line_config_processor('data/highlights.txt')
     excludes_list = text_processing.line_config_processor('data/excludes.txt')
-    
+
     # player lines is temporary, used to generate a view for urwid_ui
     player_lines = deque() # process the xml into a player log, which can also be a player view
 
@@ -67,7 +69,7 @@ def main():
     tcp_thread.daemon = True
     tcp_thread.start()
 
-    command_queue_thread = threading.Thread(target=command_processing.process_command_queue, args=(game_state, tcp_lines, gamesock))
+    command_queue_thread = threading.Thread(target=command_processing.process_command_queue, args=(game_state, tcp_lines, gamesock, COMMAND_PROCESSING_SPEED))
     command_queue_thread.daemon = True
     command_queue_thread.start()
 
@@ -77,7 +79,7 @@ def main():
 
     # start the UI and UI refresh thread
     # urwid must have its own time.sleep somewhere in its loop, since it doesn't dominate everything
-    urwid_ui.urwid_main(game_state, player_lines, text_lines, highlight_list, excludes_list, quit_event)
+    urwid_ui.urwid_main(game_state, player_lines, text_lines, highlight_list, excludes_list, quit_event, SCREEN_REFRESH_SPEED)
 
 
 if __name__ == '__main__':
