@@ -9,16 +9,18 @@ This needs improved to run multiple instances with different configs from the sa
 Also I want to get rid of the pipenv install every single startup...
 
 - Clone this repo
-- Go into vendor and run `./setup.sh`
-  - you may still need to copy dependency.lic from dr-scripts... not sure
 - Fill in your `config.py`
+- Go into vendor and run `./setup.sh`
 - run pylanthia: `docker-compose run pylanthia`
 - follow: https://github.com/rpherbig/dr-scripts/wiki/First-Time-Setup
-  - be sure to \;repository download-mapdb
-  - Next, I turned roomnumbers on: `\;roomnumbers`
-    - validate it: are you able to see roomnumbers from the map database?
-- next set up autostarts with autostart syntax
+  - guide specifies `\;repository download dependency.lic` which may work now?
+    - you may still need to copy dependency.lic from dr-scripts... not sure
+  - `\;dependency install
+  - `\;e use_lich_fork`
+  - `\;repository download-mapdb`
   - \;autostart add --global roomnumbers
+- Delete backups made by repository: ```rm lich/scripts/*.bak```
+- Go into vendor/lich-scripts and run `./update.sh`
 
 
 ## Play Instructions
