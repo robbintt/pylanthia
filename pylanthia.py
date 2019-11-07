@@ -35,7 +35,30 @@ def main():
     game_state = GlobalGameState()
     tcp_lines = queue.Queue() # split the tcp buffer on '\r\n'
     preprocessed_lines = queue.Queue()
-    text_lines = queue.Queue()
+
+    class LoggerQueue(queue.Queue):
+        ''' Queue that logs whatever is put() to it.
+        '''
+
+        def textline_logger(target_fn):
+            def func(self, *args, **kwargs):
+                if args[0][0][0] == 'text':
+                    logging.info(str(args[0][0][1]))
+                else:
+                    logging.info(str(args[0]))
+                return target_fn(self, *args, **kwargs)
+            return func
+
+        @textline_logger
+        def put(self, *args, **kwargs):
+            '''
+            could easily log here instead of the complex decorator pattern
+            but this is for fun
+            '''
+            super(LoggerQueue, self).put(*args, **kwargs)
+
+
+    text_lines = LoggerQueue()
 
     # some issue when writing from submodules, maybe related to file handle, doubt it
     # here we make the file, which may make the handle accessible? worth a shot
