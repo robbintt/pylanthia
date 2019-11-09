@@ -9,6 +9,7 @@ verify_ssl = true
 lxml = "==4.2.5"
 urwid = "==2.0.1"
 urwid-readline = "==0.10"
+urwid-stackedwidget = "*"
 
 [requires]
 python_version = "3.8.0"
