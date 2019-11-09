@@ -37,6 +37,11 @@ See [[docs/lich.md]]
 1. `pylanthia.py` needs broken into modules to be more digestible
 2. Logging and Event Handling need improved, see [[docs/xml-handling.md]]
 
+
+### Cached data
+
+It would be nice to cache a lot of player data in regular format, so that connection can be brokered a bit differently in game, and state navigation can be somewhat done offline or without querying the game.  I guess the uses of cached state are to view it, or to queue up commands, or track events over time like training rate or bundle value, hunting times, etc... also possible to diff inventory etc.
+
 ### Buffer Bugs
 
 -  sometimes the buffer skips ahead, i assume it's 1 line ahead of my position
