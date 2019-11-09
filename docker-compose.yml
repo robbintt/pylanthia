@@ -1,19 +1,21 @@
 version: '3'
 services:
   pylanthia:
+    container_name: pylanthia_app
     build: .
     ports:
       - "4901:4901"
     volumes:
       - ./vendor/lich:/lich:consistent
-      - .:/pylanthia:consistent
+      - .:/app:consistent
     entrypoint: "/bin/bash -c"
-    command: "/pylanthia/start.sh"
+    command: "/app/entrypoint.sh"
   debug:
+    container_name: pylanthia_debug
     build: .
     ports:
       - "4901:4901"
     volumes:
       - ./vendor/lich:/lich:consistent
-      - .:/pylanthia:consistent
+      - .:/app:consistent
     entrypoint: "/bin/bash"
