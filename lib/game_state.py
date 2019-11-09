@@ -1,6 +1,7 @@
 '''
 '''
 import queue
+from collections import deque
 
 class GlobalGameState:
     ''' Eventually handle all global game state here
@@ -27,6 +28,9 @@ class GlobalGameState:
 
         self.urwid_scrollbar_last = 0
         self.main_view_text = ''
+
+        WINDOW_BUFFER_SIZE = 1000 # probably move to config
+        self.urwid_main_view_text = deque([], WINDOW_BUFFER_SIZE)
 
 
     def reset_exits(self):

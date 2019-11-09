@@ -15,28 +15,15 @@ from vendor.scroll.scroll import ScrollBar, Scrollable
 import logging
 logging.getLogger(__name__)
 
-def construct_view_buffer(text_lines, player_lines, highlight_list, excludes_list, view_buffer_size=30):
+def extend_view_buffer(game_state, text_lines, highlight_list, excludes_list):
     '''
-    # grab at most view_buffer_size lines per refresh
     # it makes sense for the view contents constructor to be elsewhere anyways
+    this probably belongs somewhere else
     '''
     i = 0
-    # this is the size of the buffer, but this processing could block showing it...
-    # it needs rethought along with the text_lines data structure and return of this function
-    # ideally we would only process each line once! why are we processing on every view refresh
-    # this was intentionally MVP'd but should be updated soon
-    while i < view_buffer_size:
-        # careful this is blocking, if blocked we would want to just return what we have...
-        # and even return some stuff from the last buffer attempt too!
-        # hmm requires a little thinking!
-        # for now we could make it a list and grow it forever...
-        # then we can slice the last bit for the view again
-        try:
-            new_line = text_lines.get_nowait()
-            # temporarily rebuild player_lines for viewing
-        except queue.Empty:
-            # return the player_lines when empty or 'full'/done
-            break
+    max_lines_per_refresh = 50 # not sure if this is necessary
+    while not text_lines.empty() and i < max_lines_per_refresh:
+        new_line = text_lines.get()
 
         # munge new_line and convert bytes->utf-8
         new_line_str = b''.join([content for _, content in new_line]).decode('utf-8')+'\n'
@@ -57,30 +44,14 @@ def construct_view_buffer(text_lines, player_lines, highlight_list, excludes_lis
                 # there needs to be a color mask or something on the string index
                 # (white, 5, 7), (red, 6, 7) - apply in order so last gets precedence, use python slice positional
 
-        player_lines.append(new_line_str)
+        # rolls item 0 out on append due to deque maxlen
+        game_state.urwid_main_view_text.append(new_line_str)
         i += 1
 
-    # slice a view buffer off of player_lines
-    if len(player_lines) < view_buffer_size:
-        _min_slice = 0
-    else:
-        _min_slice = len(player_lines) - view_buffer_size
-
-    # technique for slicing with a deque
-    view_buffer = itertools.islice(player_lines, _min_slice, len(player_lines))
-    #view_buffer = player_lines[_min_slice:]
-
-    # just coerce to get out of this stupid isliced deque i don't need
-    view_buffer_list = list()
-    for line in view_buffer:
-        view_buffer_list.append(line)
-
-    if not view_buffer_list:
-        view_buffer_list.append('')
-    return view_buffer_list
+    return
 
 
-def urwid_main(game_state, player_lines, text_lines, highlight_list, excludes_list, quit_event, screen_refresh_speed=0.05):
+def urwid_main(game_state, text_lines, highlight_list, excludes_list, quit_event, screen_refresh_speed=0.05):
     ''' just the main process for urwid... needs renamed and fixed up
     '''
 
@@ -281,7 +252,7 @@ def urwid_main(game_state, player_lines, text_lines, highlight_list, excludes_li
         handle_mouse=False,
         unhandled_input=lambda key: unhandled_input(input_box, key))
 
-    def refresh_screen(loop, player_lines):
+    def refresh_screen(game_state, loop):
         #view_lines_buffer = list() # a buffer of lines sent to the terminal
         while True:
             # ideally we could just check if loop is running
@@ -335,11 +306,13 @@ def urwid_main(game_state, player_lines, text_lines, highlight_list, excludes_li
 
             # we should cache this and only run it if there's something new in the queue
             if not text_lines.empty():
-                game_state.main_view_text = construct_view_buffer(text_lines, player_lines, highlight_list, excludes_list, fixed_size_for_now)
+                # lets write a deque type that has a limited length
+                extend_view_buffer(game_state, text_lines, highlight_list, excludes_list)
 
             # the contents object is a list of (widget, option) tuples
             # http://urwid.org/reference/widget.html#urwid.Pile
-            mainframe.contents[0][0].original_widget._original_widget._original_widget.set_text(game_state.main_view_text)
+            # apparently it will not take a deque, so coerce
+            mainframe.contents[0][0].original_widget._original_widget._original_widget.set_text(list(game_state.urwid_main_view_text))
 
             # turn off autoscroll when the textbox is in focus
             scrollable_textbox = mainframe.contents[0][0].original_widget._original_widget
@@ -352,7 +325,8 @@ def urwid_main(game_state, player_lines, text_lines, highlight_list, excludes_li
 
 
     # refresh the screen in its own thread.
-    refresh = threading.Thread(target=refresh_screen, args=(loop, player_lines))
+    # this camn probably get moved to main() in pylanthia.py
+    refresh = threading.Thread(target=refresh_screen, args=(game_state, loop))
     refresh.daemon = True # kill the thread if the process dies
     refresh.start()
 

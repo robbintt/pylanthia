@@ -8,9 +8,6 @@ import os
 import logging
 import datetime
 
-# used temporarily in player_lines for urwid_ui view, NOT thread-safe
-from collections import deque 
-
 from lib import setup_game_connection
 from lib.game_state import GlobalGameState
 from lib import gametime_incrementor
@@ -64,14 +61,13 @@ def main():
     # here we make the file, which may make the handle accessible? worth a shot
     logging.debug("Initating logfile.")
 
+    # remove or move to config
     COMMAND_PROCESSING_SPEED = 0.05
     SCREEN_REFRESH_SPEED = 0.05
 
     highlight_list = text_processing.line_config_processor('data/highlights.txt')
     excludes_list = text_processing.line_config_processor('data/excludes.txt')
 
-    # player lines is temporary, used to generate a view for urwid_ui
-    player_lines = deque() # process the xml into a player log, which can also be a player view
 
     # TODO: this doesn't seem to work? or if it does, it isn't clean...
     quit_event = threading.Event() # set this flag with quit_event.set() to quit from main thread
@@ -102,7 +98,7 @@ def main():
 
     # start the UI and UI refresh thread
     # urwid must have its own time.sleep somewhere in its loop, since it doesn't dominate everything
-    urwid_ui.urwid_main(game_state, player_lines, text_lines, highlight_list, excludes_list, quit_event, SCREEN_REFRESH_SPEED)
+    urwid_ui.urwid_main(game_state, text_lines, highlight_list, excludes_list, quit_event, SCREEN_REFRESH_SPEED)
 
 
 if __name__ == '__main__':
