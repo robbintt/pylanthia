@@ -326,14 +326,12 @@ def process_game_xml(preprocessed_lines, text_lines, game_state):
     if op_line and op_line[0][0] != 'xml':
 
         try:
+            line = op_line[0][1].decode('utf-8')
+
             # don't use this to trigger the command queue, use the global roundtime time
             pattern_command_failed = r'\.\.\.wait ([0-9]+) seconds\.'
-            line = op_line[0][1].decode('utf-8')
-            # how costly is this? it should compile/cache the re string... 
-            # should we check the `...` string segment before testing the re?
-            # deal with later as necessary
             command_failed = re.fullmatch(pattern_command_failed, line) 
-            # hopefully we can grab the last command
+
             # you can imagine how this would fail if 2 commands were submitted back to back
             # so it's not this simple, we need to be able to give commands some index
             # but lets not YET add a bigger data structure for each command in the command history - YET

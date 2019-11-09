@@ -80,26 +80,15 @@ def chop_xml_and_text_from_line(line):
     return op_line
 
 
-def preprocess_tcp_lines(tcp_lines, preprocessed_lines, BUF_PROCESS_SPEED=0.01):
+def preprocess_tcp_lines(tcp_lines, preprocessed_lines):
     ''' Process the TCP lines into labelled lines for the XML parser
-
-    This parsing runs in its own thread
     '''
     while True:
-
-        # only process a line if one exists
-        # don't really need this check since Queue.get() is blocking by default
-        # may want it to give a spinning wheel/timeout in the else
-        if not tcp_lines.empty():
-            preprocessed_lines.put(chop_xml_and_text_from_line(tcp_lines.get()))
-        else:
-            pass
-
-        # this sleep throttles max line processing speed
-        time.sleep(BUF_PROCESS_SPEED)
+        # block thread on tcp_lines.get()
+        preprocessed_lines.put(chop_xml_and_text_from_line(tcp_lines.get()))
 
 
-def process_lines(preprocessed_lines, text_lines, game_state, BUF_PROCESS_SPEED=0.01):
+def process_lines(preprocessed_lines, text_lines, game_state):
     ''' process tcp lines back to front, works in a separate thread
 
     This function takes raw TCP lines and delivers annotated XML elements and text segments
@@ -131,12 +120,5 @@ def process_lines(preprocessed_lines, text_lines, game_state, BUF_PROCESS_SPEED=
     ''' 
     
     while True:
-        # don't really need this check since Queue.get() is blocking by default
-        # TODO: try getting rid of it sometime...
-        if not preprocessed_lines.empty():
-            xml_parser.process_game_xml(preprocessed_lines, text_lines, game_state)
-        else:
-            pass
-
-        # this sleep throttles max line processing speed
-        time.sleep(BUF_PROCESS_SPEED)
+        # block thread on preprocessed_lines.get() calls (in the method)
+        xml_parser.process_game_xml(preprocessed_lines, text_lines, game_state)
