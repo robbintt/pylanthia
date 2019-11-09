@@ -6,6 +6,7 @@ FROM ruby:latest as base
 # gtk2 no longer necessary in current lich? working fine without...
 RUN gem install sqlite3
 
+# lazy setup dependencies, this could be more explicit for pyenv/pipenv
 RUN apt-get update
 RUN apt-get install -y python3-pip
 RUN pip3 install pipenv
@@ -15,11 +16,13 @@ RUN mkdir /app
 WORKDIR /app
 COPY Pipfile Pipfile
 COPY Pipfile.lock Pipfile.lock
-# install into system? not sure if i want --system
-# --deploy fails the install if lockfile is out of date
-# https://pipenv-fork.readthedocs.io/en/latest/advanced.html#using-pipenv-for-deployments
-#RUN pipenv install --system --dev
-RUN pipenv sync
 
-# not working... i put this inside of start.sh instead
-#COPY deploy/openssl.cnf /etc/ssl/openssl.cnf
+# set up pyenv
+ENV PYENV_ROOT /.pyenv
+RUN curl https://pyenv.run | bash
+ENV PATH $PYENV_ROOT/shims:$PYENV_ROOT/bin:$PATH
+# annoyingly, i haven't yet mounted the version specified in .python-version
+RUN pyenv install 3.8.0
+
+# set up pipenv
+RUN pyenv exec pipenv sync

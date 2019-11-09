@@ -12,7 +12,7 @@ echo "Using lich path: $LICH_PATH"
 ruby $LICH_PATH -s --game=DR -g dr.simutronics.net:4901 &
 
 # is this even being caused by lich not booting up or is it a different network miss of some sort
-#sleep 4 # 2 was too low, 3 is too low as well, 4 is too low... maybe i should wait for some input
+sleep 1 # 2 was too low, 3 is too low as well, 4 is too low... maybe i should wait for some input
 
 #cd /pylanthia && pipenv sync && pipenv run python3 pylanthia.py
-cd /app && pipenv run python3 pylanthia.py
+cd /app && pyenv exec pipenv run python3 pylanthia.py
