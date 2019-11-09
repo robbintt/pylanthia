@@ -48,7 +48,7 @@ def get_tcp_lines(tcp_lines, gamesock, BUFSIZE=16, TCP_BUFFER_SLEEP=0.01):
             #logging.info("tcp lines processed: {}".format(len(tcp_buffer)))
         else:
             #logging.info("tcp line has no newline: {}".format(tcp_buffer))
-            time.sleep(TCP_BUFFER_SLEEP)
+            #time.sleep(TCP_BUFFER_SLEEP)
             pass
 
 

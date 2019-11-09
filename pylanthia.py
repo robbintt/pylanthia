@@ -84,7 +84,9 @@ def main():
     process_lines_thread.daemon = True
     process_lines_thread.start()
 
-    tcp_thread = threading.Thread(target=get_tcp_lines.get_tcp_lines, args=(tcp_lines, gamesock))
+    BUFSIZE = 4
+    TCP_BUFFER_SLEEP = 0.001
+    tcp_thread = threading.Thread(target=get_tcp_lines.get_tcp_lines, args=(tcp_lines, gamesock, BUFSIZE, TCP_BUFFER_SLEEP))
     tcp_thread.daemon = True
     tcp_thread.start()
 
