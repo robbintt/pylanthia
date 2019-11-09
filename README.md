@@ -42,6 +42,8 @@ See [[docs/lich.md]]
 
 It would be nice to cache a lot of player data in regular format, so that connection can be brokered a bit differently in game, and state navigation can be somewhat done offline or without querying the game.  I guess the uses of cached state are to view it, or to queue up commands, or track events over time like training rate or bundle value, hunting times, etc... also possible to diff inventory etc.
 
+The connection could be connected/disconnected from the game console or something. Not sure what value this adds, maybe character switching. Maybe multiple characters in an instance, i don't see the point of developing that yet.
+
 ### Buffer Bugs
 
 -  sometimes the buffer skips ahead, i assume it's 1 line ahead of my position
