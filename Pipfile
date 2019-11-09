@@ -11,4 +11,4 @@ urwid = "==2.0.1"
 urwid-readline = "==0.10"
 
 [requires]
-python_version = "3.7"
+python_version = "3.8.0"
