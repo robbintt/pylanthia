@@ -155,27 +155,9 @@ def urwid_main(game_state, text_lines, highlight_list, excludes_list, quit_event
             
             submitted_command = txt.edit_text
 
-            # allow multiple commands per line
-            # this doesn't work for command history
-            # maybe there should be an input history
+            # used to have a command splitter here, decided not to use it
             game_state.input_history.append(submitted_command)
-            # replace newlines with semicolons so we can process them homogeneously
-            # may need to work with urwid-rlwrap for custom multiline paste features
-            # otherwise the major use case for this string replacement is not covered
-            submitted_command = submitted_command.replace('\r', ';').replace('\n', ';')
-            #logging.info('submitted line:' + submitted_command)
-
-            # use a regex split here so that backslash can escape & 0send semicolon through the prompt
-            re_semi_splitter = r'(?<!\\);'
-            # replace all backslashes and strip all whitespace from the processed result
-            submitted_commands = [c.replace('\\', '').strip() for c in \
-                    re.split(re_semi_splitter, submitted_command)]
-            #submitted_commands = submitted_command.split(';')
-
-            for _s_c in submitted_commands:
-                if len(_s_c) > 0:
-                    _s_c = bytes(_s_c, "utf-8")
-                    game_state.command_queue.put(_s_c)
+            game_state.command_queue.put(submitted_command.encode('utf-8'))
 
             txt.set_edit_text('')
             txt.set_edit_pos(0)
