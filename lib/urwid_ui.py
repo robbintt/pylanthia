@@ -299,24 +299,22 @@ def urwid_main(game_state, text_lines, highlight_list, excludes_list, quit_event
 
             # format the status line with the current content values
             status_line_output = status_line_string.format(**status_line_contents)
-
-            # set thae status line
+            # set the status line
             mainframe.contents[1][0].original_widget.set_text(('statusbar', status_line_output))
 
-
-            # we should cache this and only run it if there's something new in the queue
+            # fill up the urwid main view text
             if not text_lines.empty():
-                # lets write a deque type that has a limited length
                 extend_view_buffer(game_state, text_lines, highlight_list, excludes_list)
+
+            scrollable_textbox = mainframe.contents[0][0].original_widget._original_widget
 
             # the contents object is a list of (widget, option) tuples
             # http://urwid.org/reference/widget.html#urwid.Pile
-            # apparently it will not take a deque, so coerce
-            mainframe.contents[0][0].original_widget._original_widget._original_widget.set_text(list(game_state.urwid_main_view_text))
+            # apparently it will not take a deque, so coerce to a list
+            scrollable_textbox._original_widget.set_text(list(game_state.urwid_main_view_text))
 
-            # turn off autoscroll when the textbox is in focus
-            scrollable_textbox = mainframe.contents[0][0].original_widget._original_widget
-            if mainframe.focus_position == 2:
+            # scroll unless item 0 is in focus
+            if mainframe.focus_position != 0:
                 # set and record the most recent position
                 scrollable_textbox.set_scrollpos(-1)
                 game_state.urwid_scrollbar_last = scrollable_textbox.get_scrollpos()
