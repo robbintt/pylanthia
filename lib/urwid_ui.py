@@ -9,6 +9,8 @@ import textwrap
 
 import urwid
 import urwid_readline
+from urwid_stackedwidget import StackedWidget
+#from urwidext_stackedwidget import StackedWidget
 
 from vendor.scroll.scroll import ScrollBar, Scrollable
 
@@ -106,13 +108,15 @@ def urwid_main(game_state, text_lines, highlight_list, excludes_list, quit_event
 
     fixed_size_for_now = 1000
     main_window_buffer_size = 40
+    main_window_stack = StackedWidget()
     main_window = ScrollBar(Scrollable(urwid.Text(''))) # initalize the window empty
+    main_window_stack.push_widget(main_window)
     input_box = urwid_readline.ReadlineEdit('> ', '') # pretty sure urwid_readline package needs Python3
 
     status_line = urwid.Text(status_line_string)
 
     mainframe = urwid.Pile([
-        ('weight', fixed_size_for_now, urwid.Filler(main_window, height=main_window_buffer_size, valign='bottom')),
+        ('weight', fixed_size_for_now, urwid.Filler(main_window_stack, height=main_window_buffer_size, valign='bottom')),
         ('fixed', 1, urwid.Filler(status_line, 'bottom')),
         ('fixed', 1, urwid.Filler(input_box, 'bottom')),
     ], focus_item=2)
@@ -288,7 +292,8 @@ def urwid_main(game_state, text_lines, highlight_list, excludes_list, quit_event
             if not text_lines.empty():
                 extend_view_buffer(game_state, text_lines, highlight_list, excludes_list)
 
-            scrollable_textbox = mainframe.contents[0][0].original_widget._original_widget
+            # mainframe is the pile, contents[0] is the first item
+            scrollable_textbox = mainframe.contents[0][0].original_widget.current_widget._original_widget
 
             # the contents object is a list of (widget, option) tuples
             # http://urwid.org/reference/widget.html#urwid.Pile
