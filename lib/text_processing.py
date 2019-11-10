@@ -80,12 +80,14 @@ def chop_xml_and_text_from_line(line):
     return op_line
 
 
-def preprocess_tcp_lines(tcp_lines, preprocessed_lines):
+def preprocess_tcp_lines(game_state, tcp_lines, preprocessed_lines):
     ''' Process the TCP lines into labelled lines for the XML parser
     '''
     while True:
         # block thread on tcp_lines.get()
-        preprocessed_lines.put(chop_xml_and_text_from_line(tcp_lines.get()))
+        tcpline = tcp_lines.get()
+        game_state.urwid_views['urwid_tcp_view'].append(tcpline.decode('utf-8'))
+        preprocessed_lines.put(chop_xml_and_text_from_line(tcpline))
 
 
 def process_lines(preprocessed_lines, text_lines, game_state):

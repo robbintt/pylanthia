@@ -36,7 +36,7 @@ class GlobalGameState:
         self.urwid_views = dict()
         self.urwid_views['urwid_main_view'] = deque([''], WINDOW_BUFFER_SIZE)
         self.urwid_views['urwid_chat_view'] = deque([''], WINDOW_BUFFER_SIZE)
-        self.urwid_views['urwid_rawtcp_view'] = deque([''], WINDOW_BUFFER_SIZE)
+        self.urwid_views['urwid_tcp_view'] = deque([''], WINDOW_BUFFER_SIZE)
 
 
     def reset_exits(self):

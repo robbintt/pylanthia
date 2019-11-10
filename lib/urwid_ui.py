@@ -10,7 +10,6 @@ import textwrap
 import urwid
 import urwid_readline
 from urwid_stackedwidget import StackedWidget
-#from urwidext_stackedwidget import StackedWidget
 
 from vendor.scroll.scroll import ScrollBar, Scrollable
 
@@ -47,7 +46,7 @@ def extend_view_buffer(game_state, text_lines, highlight_list, excludes_list):
                 # (white, 5, 7), (red, 6, 7) - apply in order so last gets precedence, use python slice positional
 
         # rolls item 0 out on append due to deque maxlen
-        game_state.urwid_main_view_text.append(new_line_str)
+        game_state.urwid_views['urwid_main_view'].append(new_line_str)
         i += 1
 
     return
@@ -109,8 +108,18 @@ def urwid_main(game_state, text_lines, highlight_list, excludes_list, quit_event
     fixed_size_for_now = 1000
     main_window_buffer_size = 40
     main_window_stack = StackedWidget()
-    main_window = ScrollBar(Scrollable(urwid.Text(''))) # initalize the window empty
-    main_window_stack.push_widget(main_window)
+
+    # must be initalized with an empty string
+    # these should probably go in a map instead of hardcoded...
+    # probably want to map N xml-defined tags to M message deques
+    story_window = ScrollBar(Scrollable(urwid.Text('')))
+    tcp_window = ScrollBar(Scrollable(urwid.Text('')))
+    chat_window = ScrollBar(Scrollable(urwid.Text('')))
+
+    main_window_stack.push_widget(story_window)
+    main_window_stack.push_widget(tcp_window)
+    main_window_stack.push_widget(chat_window)
+
     input_box = urwid_readline.ReadlineEdit('> ', '') # pretty sure urwid_readline package needs Python3
 
     status_line = urwid.Text(status_line_string)
@@ -138,6 +147,13 @@ def urwid_main(game_state, text_lines, highlight_list, excludes_list, quit_event
         a: ... urwid thing, this can probably be changed to whatever is appropriate, just use care
 
         '''
+        if key in ("`"):
+            if main_window_stack.current + 1 >= main_window_stack.widget_count:
+                main_window_stack.current = 0
+            else:
+                # don't use the fake setter, it's doing some weird modulo stuff
+                # maybe after reviewing the module code more...
+                main_window_stack.current += 1
 
         if key in ("tab"):
             # rudimentary focus bouncer for now
@@ -217,8 +233,9 @@ def urwid_main(game_state, text_lines, highlight_list, excludes_list, quit_event
             #raise urwid.ExitMainLoop()
             quit()
 
-        input_box.set_edit_text("unknown key: " + repr(key))
-        input_box.set_edit_pos(len(txt.edit_text))
+
+        #input_box.set_edit_text("unknown key: " + repr(key))
+        #input_box.set_edit_pos(len(txt.edit_text))
         return
 
     '''
@@ -292,19 +309,28 @@ def urwid_main(game_state, text_lines, highlight_list, excludes_list, quit_event
             if not text_lines.empty():
                 extend_view_buffer(game_state, text_lines, highlight_list, excludes_list)
 
+            # this target is one below main_window so lets try that instead
             # mainframe is the pile, contents[0] is the first item
-            scrollable_textbox = mainframe.contents[0][0].original_widget.current_widget._original_widget
+            #scrollable_textbox = mainframe.contents[0][0].original_widget.current_widget._original_widget
+            # this one is dynamic based on active stacked window
+            current_main_window = mainframe.contents[0][0].original_widget.current_widget._original_widget
+            # scrollable_textbox = story_window._original_widget
 
+            # we can use python names instead of drilling down...
+            #    - this is critical to future urwid organization
             # the contents object is a list of (widget, option) tuples
             # http://urwid.org/reference/widget.html#urwid.Pile
             # apparently it will not take a deque, so coerce to a list
-            scrollable_textbox._original_widget.set_text(list(game_state.urwid_main_view_text))
+            story_window._original_widget._original_widget.set_text(list(game_state.urwid_views['urwid_main_view']))
+            tcp_window._original_widget._original_widget.set_text(list(game_state.urwid_views['urwid_tcp_view']))
+            chat_window._original_widget._original_widget.set_text(list(game_state.urwid_views['urwid_chat_view']))
 
-            # scroll unless item 0 is in focus
+            # MUST - scroll the active window
+            # scroll unless item 0 is in focus - is item 0 the filler?
             if mainframe.focus_position != 0:
                 # set and record the most recent position
-                scrollable_textbox.set_scrollpos(-1)
-                game_state.urwid_scrollbar_last = scrollable_textbox.get_scrollpos()
+                current_main_window.set_scrollpos(-1)
+                game_state.urwid_scrollbar_last = current_main_window.get_scrollpos()
 
             loop.draw_screen()
 
