@@ -34,6 +34,21 @@ def chop_xml_and_text_from_line(line):
     returns a list of tuples in the format: [(type_string, content_string), ...]
     '''
 
+    # this function is no longer useful with lxml attached
+    # see about getting rid of it?
+    # here's a totally retooled version that should be a drop-in
+    # it just preserves the interface and annotation data
+
+    # always return bytes
+    if not line:
+        return [['text', b'']]
+    # annotate and return a list of pairs
+    if line[0] == b'<':
+        return [['xml', line]]
+    else:
+        return [['text', line]]
+
+    '''
     # make a bunch of line segments
     # note that line is a bytes() type, indexing line[i] returns int
     # if we slice into it line[i:i+1] we get a bytes() type of length 1
@@ -78,6 +93,7 @@ def chop_xml_and_text_from_line(line):
         xml_free_line_part = b'' # reset the xml_free_line_part
 
     return op_line
+    '''
 
 
 def preprocess_tcp_lines(game_state, tcp_lines, preprocessed_lines):
