@@ -56,6 +56,7 @@ def main():
 
 
     text_lines = LoggerQueue()
+    chat_lines = queue.Queue()
 
     # some issue when writing from submodules, maybe related to file handle, doubt it
     # here we make the file, which may make the handle accessible? worth a shot
@@ -80,7 +81,7 @@ def main():
     preprocess_lines_thread.daemon = True
     preprocess_lines_thread.start()
 
-    process_lines_thread = threading.Thread(target=text_processing.process_lines, args=(preprocessed_lines, text_lines, game_state))
+    process_lines_thread = threading.Thread(target=text_processing.process_lines, args=(preprocessed_lines, text_lines, chat_lines, game_state))
     process_lines_thread.daemon = True
     process_lines_thread.start()
 
@@ -100,7 +101,7 @@ def main():
 
     # start the UI and UI refresh thread
     # urwid must have its own time.sleep somewhere in its loop, since it doesn't dominate everything
-    urwid_ui.urwid_main(game_state, text_lines, highlight_list, excludes_list, quit_event, SCREEN_REFRESH_SPEED)
+    urwid_ui.urwid_main(game_state, text_lines, chat_lines, highlight_list, excludes_list, quit_event, SCREEN_REFRESH_SPEED)
 
 
 if __name__ == '__main__':
