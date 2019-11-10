@@ -43,7 +43,8 @@ def chop_xml_and_text_from_line(line):
     if not line:
         return [['text', b'']]
     # annotate and return a list of pairs
-    if line[0] == b'<':
+    # this needs to test for int, since indexing into a bytes gives an int
+    if line[0] == b'<'[0]:
         return [['xml', line]]
     else:
         return [['text', line]]
