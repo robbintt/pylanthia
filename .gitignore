@@ -10,5 +10,6 @@ env3/
 
 logs/
 
+config.py.*
 config.py
 *.key
