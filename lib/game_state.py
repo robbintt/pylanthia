@@ -30,8 +30,13 @@ class GlobalGameState:
         self.main_view_text = ''
 
         WINDOW_BUFFER_SIZE = 1000 # probably move to config
+
         # initialize with an empty string in the deque for urwid display
-        self.urwid_main_view_text = deque([''], WINDOW_BUFFER_SIZE)
+        #self.urwid_main_view_text = deque([''], WINDOW_BUFFER_SIZE)
+        self.urwid_views = dict()
+        self.urwid_views['urwid_main_view'] = deque([''], WINDOW_BUFFER_SIZE)
+        self.urwid_views['urwid_chat_view'] = deque([''], WINDOW_BUFFER_SIZE)
+        self.urwid_views['urwid_rawtcp_view'] = deque([''], WINDOW_BUFFER_SIZE)
 
 
     def reset_exits(self):
