@@ -130,6 +130,11 @@ def parse_events(parser, root_element, still_parsing, text_lines, chat_lines, ga
                         text_lines.put('text', elem.tail)
                 elif elem.attrib['id'] == 'percWindow':
                     pass
+                elif elem.attrib['id'] == 'death':
+                    if elem.text:
+                        text_lines.put((('text', elem.text),))
+                    if elem.tail:
+                        text_lines.put((('text', elem.tail),))
                 elif elem.attrib['id'] in ('talk', 'whispers', 'thoughts'):
                     chat_lines.put((('text', etree.tostring(elem)),))
                     if elem.text:
@@ -327,18 +332,11 @@ def process_game_xml(preprocessed_lines, text_lines, chat_lines, game_state):
     player can report the issue and work around it without missing an important detail.
 
     '''
-    # Queue.get() blocks by default
-    op_line = preprocessed_lines.get()
+    op_line = preprocessed_lines.get()  # blocking
 
-    # don't process if it doesn't start with XML
-    # this may not be a hard and fast rule, mid-line XML might be a thing
-    # if so update this control flow
     if op_line and op_line[0][0] != 'xml':
-
         try:
-            #line = op_line[0][1].decode('utf-8')
             line = op_line[0][1].decode('utf-8')
-
             # don't use this to trigger the command queue, use the global roundtime time
             pattern_command_failed = r'\.\.\.wait ([0-9]+) seconds\.'
             command_failed = re.fullmatch(pattern_command_failed, line) 
@@ -357,9 +355,7 @@ def process_game_xml(preprocessed_lines, text_lines, chat_lines, game_state):
         except Exception as e:
             logging.info("failed: ", e)
 
-
         text_lines.put(op_line)
-
         return
 
 
@@ -370,65 +366,41 @@ def process_game_xml(preprocessed_lines, text_lines, chat_lines, game_state):
     # another self-closing tag symbolizes the end of that text.  - catalog these manually!
     # run each line as its own xml... but this is a disaster as some have closing tags!
     linenum = 0
-    while op_line and linenum < len(op_line):
+    nextline = op_line[linenum][1]
 
-        nextline = op_line[linenum][1]
-
+    while linenum < len(op_line):
         # only feed the line if it starts with xml... is this universally true?
+
+        # bypass text, this shouldn't happen though
+        # text inside an xml block should be accessed via .text attr
+        '''
+        if op_line[linenum][0] == 'text':
+            text_lines.put((op_line[linenum],))
+        '''
+
         if op_line[linenum][0] == 'xml':
-
-            '''
-            # identify if the root xml element has a text tail. if so, append it.
-            # this allows us to munge the text element.tail in the element's 'action' function
-            # *** needs doing *** warning: only self-closing tags have text tails... how to manage this?
-            # *** could label self closing elements in the splitter differently...
-            # *** note: since non-self-closing-elements never have a tail, this "should not" break things...
-            if linenum+1 < len(op_line) and op_line[linenum+1][0] == 'text':
-                linenum += 1
-                tail = op_line[linenum][1]
-                nextline += tail
-            '''
-
-            events = ('start', 'end',) # other events might be useful too? what are my options?
+            events = ('start', 'end',) # other events might be useful too?
             parser = etree.XMLPullParser(events, recover=True) # can we log recoveries somewhere?
-            
+
+            parser.feed(nextline)
+
+            # examine the parser and determine if we should feed more lines or close...
             # feed lines until the root element is closed
-            root_element = None
-            still_parsing = True
-            while still_parsing and linenum < len(op_line):
+            root_element, still_parsing = None, None  # reference before assignment hack
+            root_element, still_parsing = parse_events(parser, root_element, still_parsing, text_lines, chat_lines, game_state)
+            
+            # avoid double increment in parent while loop
+            if still_parsing:
+                linenum += 1
 
-                # the initial nextline is already set up, see directly above
-                if not nextline:
-                    nextline = op_line[linenum][1] # same as line, but used/incremented in this while loop
-                parser.feed(nextline)
-
-                # examine the parser and determine if we should feed more lines or close...
-                root_element, still_parsing = parse_events(parser, root_element, still_parsing, text_lines, chat_lines, game_state)
-                
-                # avoid double increment in parent while loop
-                if still_parsing:
-                    linenum += 1
-
-                nextline = b''
-
+            nextline = b''
             #parser.close() # i think this is recommended... read about it, it is probably gc'd next loop?
 
-        # if the line is text...
-        else:
-            text_lines.put((op_line[linenum],))
-
-
         linenum += 1
-
         # feed another line if still parsing
-        # probably need a cap on how many times we will do this before dumping the xml and moving on
+        # probably need a cap before just dumping the xml...
+        # how often does this actually happen?
         if linenum >= len(op_line) and still_parsing:
             op_line.append(preprocessed_lines.get())
 
-    
-    ## once the line is processed, trigger all queued xml events for the line?
-    ## we can also trigger the xml events as they come up...
-
     return
-
-
