@@ -16,15 +16,15 @@ from vendor.scroll.scroll import ScrollBar, Scrollable
 import logging
 logging.getLogger(__name__)
 
-def extend_view_buffer(game_state, text_lines, highlight_list, excludes_list):
+def extend_view_buffer(text_deque, target_queue, highlight_list, excludes_list):
     '''
     # it makes sense for the view contents constructor to be elsewhere anyways
     this probably belongs somewhere else
     '''
     i = 0
     max_lines_per_refresh = 50 # not sure if this is necessary
-    while not text_lines.empty() and i < max_lines_per_refresh:
-        new_line = text_lines.get()
+    while not target_queue.empty() and i < max_lines_per_refresh:
+        new_line = target_queue.get()
 
         # munge new_line and convert bytes->utf-8
         new_line_str = b''.join([content for _, content in new_line]).decode('utf-8')+'\n'
@@ -45,14 +45,15 @@ def extend_view_buffer(game_state, text_lines, highlight_list, excludes_list):
                 # there needs to be a color mask or something on the string index
                 # (white, 5, 7), (red, 6, 7) - apply in order so last gets precedence, use python slice positional
 
+        #game_state.urwid_views['urwid_main_view'].append(new_line_str)
         # rolls item 0 out on append due to deque maxlen
-        game_state.urwid_views['urwid_main_view'].append(new_line_str)
+        text_deque.append(new_line_str)
         i += 1
 
     return
 
 
-def urwid_main(game_state, text_lines, highlight_list, excludes_list, quit_event, screen_refresh_speed=0.05):
+def urwid_main(game_state, text_lines, chat_lines, highlight_list, excludes_list, quit_event, screen_refresh_speed=0.05):
     ''' just the main process for urwid... needs renamed and fixed up
     '''
 
@@ -307,7 +308,10 @@ def urwid_main(game_state, text_lines, highlight_list, excludes_list, quit_event
 
             # fill up the urwid main view text
             if not text_lines.empty():
-                extend_view_buffer(game_state, text_lines, highlight_list, excludes_list)
+                extend_view_buffer(game_state.urwid_views['urwid_main_view'], text_lines, highlight_list, excludes_list)
+            # fill up the urwid chat view text
+            if not chat_lines.empty():
+                extend_view_buffer(game_state.urwid_views['urwid_chat_view'], chat_lines, highlight_list, excludes_list)
 
             # this target is one below main_window so lets try that instead
             # mainframe is the pile, contents[0] is the first item

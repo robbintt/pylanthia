@@ -90,7 +90,7 @@ def preprocess_tcp_lines(game_state, tcp_lines, preprocessed_lines):
         preprocessed_lines.put(chop_xml_and_text_from_line(tcpline))
 
 
-def process_lines(preprocessed_lines, text_lines, game_state):
+def process_lines(preprocessed_lines, text_lines, chat_lines, game_state):
     ''' process tcp lines back to front, works in a separate thread
 
     This function takes raw TCP lines and delivers annotated XML elements and text segments
@@ -123,4 +123,4 @@ def process_lines(preprocessed_lines, text_lines, game_state):
     
     while True:
         # block thread on preprocessed_lines.get() calls (in the method)
-        xml_parser.process_game_xml(preprocessed_lines, text_lines, game_state)
+        xml_parser.process_game_xml(preprocessed_lines, text_lines, chat_lines, game_state)

@@ -7,7 +7,7 @@ import logging
 logging.getLogger(__name__)
 
 
-def parse_events(parser, root_element, still_parsing, text_lines, game_state):
+def parse_events(parser, root_element, still_parsing, text_lines, chat_lines, game_state):
     ''' When an element ends, determine what to do
 
     these functions govern what is put in the text_lines Queue
@@ -187,6 +187,7 @@ def parse_events(parser, root_element, still_parsing, text_lines, game_state):
                 DEBUG_PREFIX = bytes(elem.tag, 'ascii') + b':' + bytes(elem.attrib['id'], 'ascii') + b': '
                 if elem.attrib['id'] == 'speech':
                     if elem.text:
+                        chat_lines.put((('text', bytes(elem.text, 'utf-8')),))
                         text_lines.put((('text', bytes(elem.text, 'utf-8')),))
                     pass
                 elif elem.attrib['id'] == 'roomDesc':
@@ -297,7 +298,7 @@ def parse_events(parser, root_element, still_parsing, text_lines, game_state):
     return root_element, still_parsing
 
 
-def process_game_xml(preprocessed_lines, text_lines, game_state):
+def process_game_xml(preprocessed_lines, text_lines, chat_lines, game_state):
     ''' Get any game state out of the XML, return a replacement line
     
     We now want to process any XML line fully as xml using the obj.text and obj.tail values
@@ -392,7 +393,7 @@ def process_game_xml(preprocessed_lines, text_lines, game_state):
                 parser.feed(nextline)
 
                 # examine the parser and determine if we should feed more lines or close...
-                root_element, still_parsing = parse_events(parser, root_element, still_parsing, text_lines, game_state)
+                root_element, still_parsing = parse_events(parser, root_element, still_parsing, text_lines, chat_lines, game_state)
                 
                 # avoid double increment in parent while loop
                 if still_parsing:
