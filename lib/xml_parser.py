@@ -126,10 +126,17 @@ def parse_events(parser, root_element, still_parsing, text_lines, chat_lines, ga
 
                 if elem.attrib['id'] in ('logons', 'atmospherics'):
                     if elem.tail:
+                        # not sure this ever happens, i think it's a bug without a parent sequence container
                         text_lines.put('text', elem.tail)
                 elif elem.attrib['id'] == 'percWindow':
                     pass
                 elif elem.attrib['id'] in ('talk', 'whispers', 'thoughts'):
+                    chat_lines.put((('text', etree.tostring(elem)),))
+                    if elem.text:
+                        chat_lines.put((('text', elem.text),))
+                    # never seems to happen
+                    if elem.tail:
+                        chat_lines.put((('text', elem.tail),))
                     pass
                 # catchall for elements WITH 'id' attr
                 else:
@@ -188,8 +195,10 @@ def parse_events(parser, root_element, still_parsing, text_lines, chat_lines, ga
                 if elem.attrib['id'] == 'speech':
                     if elem.text:
                         chat_lines.put((('text', bytes(elem.text, 'utf-8')),))
+                        chat_lines.put((('text', etree.tostring(elem)),))
                         text_lines.put((('text', bytes(elem.text, 'utf-8')),))
-                    pass
+                    if elem.tail:
+                        chat_lines.put((('text', elem.tail),))
                 elif elem.attrib['id'] == 'roomDesc':
                     logging.info(b"room text: " + etree.tostring(elem))
                     #logging.info(b"room text: " + bytes(elem, 'ascii'))
@@ -327,6 +336,7 @@ def process_game_xml(preprocessed_lines, text_lines, chat_lines, game_state):
     if op_line and op_line[0][0] != 'xml':
 
         try:
+            #line = op_line[0][1].decode('utf-8')
             line = op_line[0][1].decode('utf-8')
 
             # don't use this to trigger the command queue, use the global roundtime time
@@ -360,7 +370,7 @@ def process_game_xml(preprocessed_lines, text_lines, chat_lines, game_state):
     # another self-closing tag symbolizes the end of that text.  - catalog these manually!
     # run each line as its own xml... but this is a disaster as some have closing tags!
     linenum = 0
-    while linenum < len(op_line):
+    while op_line and linenum < len(op_line):
 
         nextline = op_line[linenum][1]
 
