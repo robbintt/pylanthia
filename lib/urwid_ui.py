@@ -329,6 +329,7 @@ def urwid_main(game_state, text_lines, highlight_list, excludes_list, quit_event
             # scroll unless item 0 is in focus - is item 0 the filler?
             if mainframe.focus_position != 0:
                 # set and record the most recent position
+                current_main_window._original_widget._invalidate # invalidate the visible text widget cache
                 current_main_window.set_scrollpos(-1)
                 game_state.urwid_scrollbar_last = current_main_window.get_scrollpos()
 
