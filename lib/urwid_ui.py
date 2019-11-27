@@ -27,7 +27,7 @@ def extend_view_buffer(game_state, text_lines, highlight_list, excludes_list):
         new_line = text_lines.get()
 
         # munge new_line and convert bytes->utf-8
-        new_line_str = b''.join([content for _, content in new_line]).decode('utf-8')+'\n'
+        new_line_str = b''.join([content for _, content in new_line]).decode('utf-8').replace('&gt;', '>')+'\n'
 
         _skip_excluded_line = False
         for exclude_substr in excludes_list:
