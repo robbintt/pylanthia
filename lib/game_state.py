@@ -29,7 +29,8 @@ class GlobalGameState:
         self.urwid_scrollbar_last = 0
         self.main_view_text = ''
 
-        WINDOW_BUFFER_SIZE = 1000 # probably move to config
+        #WINDOW_BUFFER_SIZE = 1000 # probably move to config
+        WINDOW_BUFFER_SIZE = None # probably move to config
 
         # initialize with an empty string in the deque for urwid display
         #self.urwid_main_view_text = deque([''], WINDOW_BUFFER_SIZE)
