@@ -29,8 +29,10 @@ class GlobalGameState:
         self.urwid_scrollbar_last = 0
         self.main_view_text = ''
 
-        #WINDOW_BUFFER_SIZE = 1000 # probably move to config
-        WINDOW_BUFFER_SIZE = None # probably move to config
+        # this can't be None or the slowdown on redraw gets absurdly bad
+        #WINDOW_BUFFER_SIZE = 1000 # this was always fine, i think?
+        # is 10000 too large? i still have slowdown when hunting...
+        WINDOW_BUFFER_SIZE = 1000 # probably move to config
 
         # initialize with an empty string in the deque for urwid display
         #self.urwid_main_view_text = deque([''], WINDOW_BUFFER_SIZE)
