@@ -24,6 +24,12 @@ This needs improved to run multiple instances with different configs from the sa
 - Delete backups made by repository: ```rm lich/scripts/*.bak```
 - Go into vendor/lich-scripts and run `./update.sh`
 
+## Autostart
+
+Add these scripts to your autostart.
+
+- `;autostart add drinfomon roomnumbers percmoons rpa_sniper`
+
 
 ## Play Instructions
 
