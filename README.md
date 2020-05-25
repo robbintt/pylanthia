@@ -26,9 +26,10 @@ This needs improved to run multiple instances with different configs from the sa
 
 ## Autostart
 
-Add these scripts to your autostart.
+Add these scripts to your autostart and dependency.lic lich fork autostart.
 
-- `;autostart add drinfomon roomnumbers percmoons rpa_sniper`
+- `;autostart add drinfomon roomnumbers percmoons`
+- `;e autostart('rpa_sniper', false)`
 
 
 ## Play Instructions
