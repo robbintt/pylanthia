@@ -29,10 +29,6 @@ def get_tcp_lines(tcp_lines, gamesock, BUFSIZE=16, TCP_BUFFER_SLEEP=0.01):
     while True:
         tcp_chunk = gamesock.recv(BUFSIZE)
 
-        # this is kind of a lot of writes... should be fine though
-        with open(tcplog_location, 'a') as f:
-            f.write(tcp_chunk.decode('utf-8'))
-
         # the buffer could f.read the last 4000 characters or something.. what's faster?
         # right now the buffer grows without limit, which is not the best...
         tcp_buffer += tcp_chunk
@@ -44,6 +40,9 @@ def get_tcp_lines(tcp_lines, gamesock, BUFSIZE=16, TCP_BUFFER_SLEEP=0.01):
             # store the rest on the queue
             for line in tcp_buffer_by_lines:
                 tcp_lines.put(line)
+                # raw tcp log per line
+                with open(tcplog_location, 'a') as f:
+                    f.write(line.decode('utf-8')+'\n')
 
             #logging.info("tcp lines processed: {}".format(len(tcp_buffer)))
         else:
