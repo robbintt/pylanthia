@@ -6,6 +6,12 @@ FROM ruby:latest as base
 # gtk2 no longer necessary in current lich? working fine without...
 RUN gem install sqlite3
 
+# use to profile with this guide: https://samsaffron.com/archive/2018/01/18/my-production-ruby-on-rails-cpu-is-at-100-now-what
+# rbtrace -p 190 -e 'Thread.new{ require "stackprof"; StackProf.start(mode: :cpu); sleep 2; StackProf.stop; StackProf.results("/tmp/perf"); }'
+# make sure you require rbtrace in lich.rb/lich.rbw
+RUN gem install rbtrace
+RUN gem install stackprof
+
 # lazy setup dependencies, this could be more explicit for pyenv/pipenv
 RUN apt-get update
 RUN apt-get install -y python3-pip

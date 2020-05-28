@@ -24,10 +24,15 @@ def extend_view_buffer(game_state, text_lines, highlight_list, excludes_list):
     i = 0
     max_lines_per_refresh = 50 # not sure if this is necessary
     while not text_lines.empty() and i < max_lines_per_refresh:
-        new_line = text_lines.get()
+
+        # probably not hanging here but want to nonblock so other threads don't snake the last line
+        try:
+            new_line = text_lines.get_nowait()
+        except Queue.Empty:
+            continue
 
         # munge new_line and convert bytes->utf-8
-        new_line_str = b''.join([content for _, content in new_line]).decode('utf-8').replace('&gt;', '>')+'\n'
+        new_line_str = b''.join([content for _, content in new_line]).decode('utf-8')+'\n'
 
         _skip_excluded_line = False
         for exclude_substr in excludes_list:
@@ -45,7 +50,7 @@ def extend_view_buffer(game_state, text_lines, highlight_list, excludes_list):
                 # there needs to be a color mask or something on the string index
                 # (white, 5, 7), (red, 6, 7) - apply in order so last gets precedence, use python slice positional
 
-        # rolls item 0 out on append due to deque maxlen
+        # rolls item 0 out on append if deque maxlen is set
         game_state.urwid_views['urwid_main_view'].append(new_line_str)
         i += 1
 
@@ -306,6 +311,7 @@ def urwid_main(game_state, text_lines, highlight_list, excludes_list, quit_event
             mainframe.contents[1][0].original_widget.set_text(('statusbar', status_line_output))
 
             # fill up the urwid main view text
+            # does this need to be in its own thread? i don't think this is the blocking piece
             if not text_lines.empty():
                 extend_view_buffer(game_state, text_lines, highlight_list, excludes_list)
 
@@ -325,60 +331,33 @@ def urwid_main(game_state, text_lines, highlight_list, excludes_list, quit_event
             tcp_window._original_widget._original_widget.set_text(list(game_state.urwid_views['urwid_tcp_view']))
             chat_window._original_widget._original_widget.set_text(list(game_state.urwid_views['urwid_chat_view']))
 
+            # MUST - scroll the active window
+            # scroll unless item 0 is in focus - is item 0 the filler?
+            # HMM - if i remove the if condition, do i get hangs?
             if mainframe.focus_position != 0:
-                # not it: self.invalidate() happens during set_scrollpos() anyways...
-                #current_main_window._original_widget._invalidate() # invalidate the visible text widget cache
+                current_main_window.set_scrollpos(-1)
 
-                # set and record the most recent position
-                current_main_window.set_scrollpos(-1) # this invalidates the widget
+            if current_main_window.get_scrollpos() != -1:
                 game_state.urwid_scrollbar_last = current_main_window.get_scrollpos()
+            # somehow -1 scrollpos is getting stuck in an invalid position. not sure why it's not refreshing. i could try refreshing sometimes...
+            # try this? it drops any cached canvas, doesn't work inside the loop though
+            current_main_window._invalidate()
+            # maybe invalidate the text or the Scrollable
+            current_main_window._original_widget._invalidate()
 
-            # what if regardless of focus we invalidate the stack
-            # this had no effect.
-            #main_window_stack._invalidate()
+            # not yet tried
+            #scrollable._invalidate # need to find the name for this to test it
+            
 
-            # what 
+            # this showed that the scrollpos is correct as -1 so i think its caching
+            logging.info("Current window scrollbar position: {}".format(game_state.urwid_scrollbar_last))
 
-            # not sure how to: what if we invalidate the whole chain of widgets?
-            # only the current window is freezing, i can still see statusbar and textbox changes
+            # testing if losing focus is causing the screen to stop refreshing...
+            # otherwise we need to log the streams too and see if they are propagating and the screen refresh is hanging
+            if mainframe.focus_position not in (0, 2):
+                mainframe.focus_position = 2
 
-            # not it: what if we invalidate mainframe?
-            # mainframe._invalidate() # does this invalidate all its children?
-
-            # what if we force redraw every time?
-            # using this and a ;go2 (far away) in lich, i got no hangs
-            # not the best test because i have no record of go2 hanging
-            # so it needs more testing
-            # i think this is working, we could probably make it more precise.
-            # i'm getting some "clipping" on redraw, which is new
-            # the clipping probably comes from a redraw before the screen position is updated
-            # so we would just want to update the scrollpos more often...
-            # THIS DIDNT FIX IT... dang
-            #loop.screen.clear()
-
-            # this is our normal, historic screen draw
             loop.draw_screen()
-
-            # error: ui main window hangs, 
-            # i can reproduce by submitting multiple commands at once
-            # sequence that replicated: > unh  > l
-            # implies it is tied into command processing code
-            # this error came about when i added one of the new urwid features
-            # likely reasons: 
-            # - cache not invalidated on some widget?
-            #   - how does cache invalidation cascade to child widgets?
-            # - i
-            # - why does pressing tab trigger the window to work?
-            #   - pressing tab triggers a focus change
-
-
-            # not it: idea - what if we force focus back to either the window or the textbox
-            # code removed, if not 2 then 0 on every refresh... after the draw
-
-            # not it: this always yields -1 as the current positioin while a hang happens 
-            #logging.info("mainframe.focus_position={}".format(current_main_window.get_scrollpos()))
-            # not it: this always yields a focus position of 2 while the text is hanging
-            #logging.info("mainframe.focus_position={}".format(mainframe.focus_position))
 
 
     # refresh the screen in its own thread.
