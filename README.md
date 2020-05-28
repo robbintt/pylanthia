@@ -9,16 +9,27 @@ This needs improved to run multiple instances with different configs from the sa
 - Clone this repo
 - Fill in your `config.py`
 - Go into vendor and run `./setup.sh`
-- run pylanthia: `docker-compose run pylanthia`
-- follow: https://github.com/rpherbig/dr-scripts/wiki/First-Time-Setup
-  - guide specifies `\;repository download dependency.lic` which may work now?
-    - you may still need to copy dependency.lic from dr-scripts... not sure
+- run pylanthia: `run.sh`
+  - Make sure docker is running before doing this
+- follow these steps from [here](https://github.com/rpherbig/dr-scripts/wiki/First-Time-Setup)
+  - copy dependency.lic over from dr-scripts
+    - this is the equivalent of `\;repository download dependency.lic`
   - `\;dependency install
   - `\;e use_lich_fork`
-  - `\;repository download-mapdb`
+  - sometimes you need to restart DR a few times at this step
+    - It will say "invalid game client, choose one of the following..."
+    - Just restart and debug a bit, all config seems right.
+  - `\;repository download-mapdb` (works great)
   - \;autostart add --global roomnumbers
 - Delete backups made by repository: ```rm lich/scripts/*.bak```
 - Go into vendor/lich-scripts and run `./update.sh`
+
+## Autostart
+
+Add these scripts to your autostart and dependency.lic lich fork autostart.
+
+- `;autostart add drinfomon roomnumbers percmoons`
+- `;e autostart('rpa_sniper', false)`
 
 
 ## Play Instructions
