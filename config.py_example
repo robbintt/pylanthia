@@ -14,4 +14,4 @@ username = b'your_username'
 password = b'your_password'
 character = b'your_character_name_exact'
 
-keyfile = ".$character.key"
+keyfile = f".{character}.key"
