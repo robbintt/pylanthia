@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# not yet implemented
-#CONFIG_FILE=Giosaffat.yml.config
+PYLANTHIA_CONFIG="config.json"
 
-docker-compose run pylanthia
+docker-compose run -e PYLANTHIA_CONFIG=${PYLANTHIA_CONFIG} pylanthia

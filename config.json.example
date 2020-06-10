@@ -1,0 +1,12 @@
+{
+  "frontend_settings": "/FE:STORMFRONT /VERSION:1.0.1.26 /P:WIN_XP /XML",
+  "eaccess_host": "eaccess.play.net",
+  "eaccess_port": "7900",
+  "server_addr": "dr.simutronics.net",
+  "server_port": "4901",
+  "gamestring": "DR",
+  "username": "yourusername",
+  "password": "p4ssw0rd",
+  "character": "CharFirstName",
+  "keyfile": ".CharFirstName.key"
+}
