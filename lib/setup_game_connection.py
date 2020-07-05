@@ -45,11 +45,10 @@ def _open_game_socket(jsonconfig, GAME_KEY=''):
         GAME_KEY = eaccess.get_game_key(
                 jsonconfig['eaccess_host'],
                 jsonconfig['eaccess_port'],
-                jsonconfig['username'].encode('ascii'),
-                jsonconfig['password'].encode('ascii'),
-                jsonconfig['character'].encode('ascii'),
-                jsonconfig['gamestring'].encode('ascii'),
-                jsonconfig['keyfile'])
+                jsonconfig['username'],
+                jsonconfig['password'],
+                jsonconfig['character'],
+                jsonconfig['gamestring'])
 
     lichprocess = subprocess.Popen(["./lichlauncher.sh"], shell=True)
     time.sleep(1)
@@ -68,9 +67,12 @@ def game_connection_controller():
     configfile = os.getenv('PYLANTHIA_CONFIG', 'config.json')
     jsonconfig = loadconfig(configfile)
 
+    character = jsonconfig["character"]
+    keyfile = eaccess.keyfile_template.format(character)
+
     GAME_KEY = ''
-    if os.path.isfile(jsonconfig['keyfile']):
-        with open(jsonconfig['keyfile']) as f:
+    if os.path.isfile(keyfile):
+        with open(keyfile) as f:
             GAME_KEY = f.read().encode('utf-8')
 
     if GAME_KEY:

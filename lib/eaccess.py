@@ -8,7 +8,14 @@ import socket
 import time
 import os
 
-def get_game_key(host, port, username, password, character, gamestring, keyfile):
+keyfile_template = ".{}.key"
+
+def get_game_key(host, port, username, password, character, gamestring):
+
+    username = username.encode("ascii")
+    password = password.encode("ascii")
+    character = character.encode("ascii")
+    gamestring = gamestring.encode("ascii")
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server = (host, int(port))
@@ -43,14 +50,13 @@ def get_game_key(host, port, username, password, character, gamestring, keyfile)
             xor_letter = xor_letter | 128 # 128 == 0x80
         hashed_password.append(xor_letter)
         #hashed_password.append((pw_hashing_key[i] ^ (password[i] - 32)) + 32)
-    
+
     # really hashed_password should already be convertible to bytes() because it is a seq of ints
     # consider moving all this processing to a bytearray for simplicity
     hashed_password = bytes(hashed_password)
 
     def get_login_key(username, hashed_password):
-    
-        # get a login key
+
         sock.sendall(b'A\t' + username + b'\t' + hashed_password + b'\n') # request a key
         tcp_buffer = bytes()
         while b'\n' not in tcp_buffer:
@@ -122,20 +128,7 @@ def get_game_key(host, port, username, password, character, gamestring, keyfile)
     print("ready to play: ", tcp_buffer)
 
     # store the last game key
-    with open(keyfile, 'w') as f:
+    character_utf8 = character.decode('utf-8')
+    with open(keyfile_template.format(character_utf8), 'w') as f:
         f.write(KEY.decode('utf-8'))
     return KEY
-
-
-if __name__ == '__main__':
-    ''' Get a token for the game
-
-    ACCOUNT, GAME, CHARACTER - these must all be provided... probably just in config
-    '''
-    from config import eaccess_host, eaccess_port, username, password, character, gamestring
-
-    game_key = get_game_key(eaccess_host, eaccess_port, username, password, character, gamestring)
-
-    print(game_key)
-
-
