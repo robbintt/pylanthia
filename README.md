@@ -24,6 +24,10 @@ This needs improved to run multiple instances with different configs from the sa
 - Delete backups made by repository: ```rm lich/scripts/*.bak```
 - Go into vendor/lich-scripts and run `./update.sh`
 
+### Optional: dependency.lic developer setup
+
+- Follow [these instructions](https://github.com/rpherbig/dr-scripts/wiki/Developer-Setup)
+
 ## Autostart
 
 Add these scripts to your autostart and dependency.lic lich fork autostart.
