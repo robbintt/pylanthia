@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # this manages the case in which lich is installed as .rb but not updated (to .rbw)
-LICH_PATH=$([[ -f "/lich/lich.rbw" ]] && echo "/lich/lich.rbw" || echo "/lich/lich.rb")
+LICH_PATH=$([[ -f "/app/vendor/lich/lich.rbw" ]] && echo "/app/vendor/lich/lich.rbw" || echo "/app/vendor/lich/lich.rb")
 echo "Using lich path: $LICH_PATH"
 
 LICH_PORT=${LICH_PORT:-4901}
