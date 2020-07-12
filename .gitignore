@@ -11,5 +11,7 @@ env3/
 logs/
 
 config.py.*
+config.json
+config.json*
 config.py
 *.key

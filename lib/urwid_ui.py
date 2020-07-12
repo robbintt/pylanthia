@@ -27,7 +27,7 @@ def extend_view_buffer(text_deque, target_queue, highlight_list, excludes_list):
         new_line = target_queue.get()
 
         # munge new_line and convert bytes->utf-8
-        new_line_str = b''.join([content for _, content in new_line]).decode('utf-8')+'\n'
+        new_line_str = b''.join([content for _, content in new_line]).decode('utf-8').replace('&gt;', '>')+'\n'
 
         _skip_excluded_line = False
         for exclude_substr in excludes_list:
@@ -333,6 +333,7 @@ def urwid_main(game_state, text_lines, chat_lines, highlight_list, excludes_list
             # scroll unless item 0 is in focus - is item 0 the filler?
             if mainframe.focus_position != 0:
                 # set and record the most recent position
+                current_main_window._original_widget._invalidate # invalidate the visible text widget cache
                 current_main_window.set_scrollpos(-1)
                 game_state.urwid_scrollbar_last = current_main_window.get_scrollpos()
 

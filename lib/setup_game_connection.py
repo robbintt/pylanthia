@@ -1,7 +1,9 @@
 '''
 '''
+import json
 import socket
 import os
+import subprocess
 import time
 import logging
 
@@ -10,7 +12,10 @@ logging.getLogger(__name__)
 # consider merging eaccess here
 from lib import eaccess
 
-from config import eaccess_host, eaccess_port, username, password, character, gamestring, server_addr, server_port, frontend_settings, keyfile
+
+def loadconfig(configfile):
+    with open(configfile) as f:
+        return json.load(f)
 
 def setup_game_connection(server_addr, server_port, key, frontend_settings):
     ''' initialize the connection and return the game socket
@@ -33,21 +38,37 @@ def setup_game_connection(server_addr, server_port, key, frontend_settings):
 
     return gamesock
 
-
-def _open_game_socket(GAME_KEY=''):
+def _open_game_socket(jsonconfig, GAME_KEY=''):
     ''' method is a cleanliness abstraction, relies on parent/enclosed variables
     '''
     if not GAME_KEY:
-        GAME_KEY = eaccess.get_game_key(eaccess_host, eaccess_port, username, password, character, gamestring, keyfile)
+        GAME_KEY = eaccess.get_game_key(
+                jsonconfig['eaccess_host'],
+                jsonconfig['eaccess_port'],
+                jsonconfig['username'],
+                jsonconfig['password'],
+                jsonconfig['character'],
+                jsonconfig['gamestring'])
 
-    gamesock = setup_game_connection(server_addr, server_port, GAME_KEY, frontend_settings)
-    return gamesock
+    lichprocess = subprocess.Popen(["./lichlauncher.sh"], shell=True)
+    time.sleep(1)
 
+    gamesock = setup_game_connection(
+            jsonconfig['server_addr'],
+            jsonconfig['server_port'],
+            GAME_KEY,
+            jsonconfig['frontend_settings'].encode('ascii'))
+
+    return gamesock, lichprocess
 
 def game_connection_controller():
     ''' controller gets its values from this module
     '''
-    from config import eaccess_host, eaccess_port, username, password, character, gamestring
+    configfile = os.getenv('PYLANTHIA_CONFIG', 'config.json')
+    jsonconfig = loadconfig(configfile)
+
+    character = jsonconfig["character"]
+    keyfile = eaccess.keyfile_template.format(character)
 
     GAME_KEY = ''
     if os.path.isfile(keyfile):
@@ -56,13 +77,13 @@ def game_connection_controller():
 
     if GAME_KEY:
         try:
-            gamesock = _open_game_socket(GAME_KEY)
+            gamesock, lichprocess = _open_game_socket(jsonconfig, GAME_KEY)
         # cached game key was expired
         except BrokenPipeError as e:
             logging.debug('Game socket broke on cached GAME_KEY: {}'.format(e))
-            gamesock = _open_game_socket()
+            gamesock, lichprocess = _open_game_socket(jsonconfig)
     # no cached game key
     else:
-        gamesock = _open_game_socket()
+        gamesock, lichprocess = _open_game_socket(jsonconfig)
 
-    return gamesock
+    return gamesock, lichprocess

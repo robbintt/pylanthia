@@ -1,4 +1,5 @@
-FROM ruby:latest as base
+# ruby:2.6.6 pinned for now, required by lich scripts in https://github.com/rpherbig/dr-scripts/
+FROM ruby:2.6.6 as base
 
 # secrets still come from config.py which is mounted
 # FUTURE: secrets can come from .env when docker-compose entrypoint is hit...

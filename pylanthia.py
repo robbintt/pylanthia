@@ -75,7 +75,7 @@ def main():
 
     # this should probably be initialized in game_state
     # we should probably try to reacquire a socket if we lose it
-    gamesock = setup_game_connection.game_connection_controller()
+    gamesock, lichprocess = setup_game_connection.game_connection_controller()
 
     preprocess_lines_thread = threading.Thread(target=text_processing.preprocess_tcp_lines, args=(game_state, tcp_lines, preprocessed_lines))
     preprocess_lines_thread.daemon = True
@@ -86,7 +86,7 @@ def main():
     process_lines_thread.start()
 
     BUFSIZE = 4
-    TCP_BUFFER_SLEEP = 0.001
+    TCP_BUFFER_SLEEP = 0.0001
     tcp_thread = threading.Thread(target=get_tcp_lines.get_tcp_lines, args=(tcp_lines, gamesock, BUFSIZE, TCP_BUFFER_SLEEP))
     tcp_thread.daemon = True
     tcp_thread.start()

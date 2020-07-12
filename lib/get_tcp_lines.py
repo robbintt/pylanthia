@@ -38,16 +38,16 @@ def get_tcp_lines(tcp_lines, gamesock, BUFSIZE=16, TCP_BUFFER_SLEEP=0.01):
             # grab the last one back
             tcp_buffer = tcp_buffer_by_lines.pop()
             # store the rest on the queue
-            for line in tcp_buffer_by_lines:
-                tcp_lines.put(line)
-                # raw tcp log per line
-                with open(tcplog_location, 'a') as f:
+            with open(tcplog_location, 'a') as f:
+                for line in tcp_buffer_by_lines:
                     f.write(line.decode('utf-8')+'\n')
+                    tcp_lines.put(line)
+                    # raw tcp log per line
 
             #logging.info("tcp lines processed: {}".format(len(tcp_buffer)))
         else:
             #logging.info("tcp line has no newline: {}".format(tcp_buffer))
-            #time.sleep(TCP_BUFFER_SLEEP)
+            time.sleep(TCP_BUFFER_SLEEP)
             pass
 
 
