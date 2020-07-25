@@ -87,7 +87,7 @@ def preprocess_tcp_lines(game_state, tcp_lines, preprocessed_lines):
         # block thread on tcp_lines.get()
         tcpline = tcp_lines.get()
         game_state.urwid_views['urwid_tcp_view'].append(tcpline.decode('utf-8').replace('&gt;', '>'))
-        preprocessed_lines.put(chop_xml_and_text_from_line(tcpline))
+        preprocessed_lines.put(chop_xml_and_text_from_line(tcpline.strip())) # might not want to strip the newline here, it might have meaning
 
 
 def process_lines(preprocessed_lines, text_lines, game_state):

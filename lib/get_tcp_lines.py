@@ -41,7 +41,7 @@ def get_tcp_lines(tcp_lines, gamesock, BUFSIZE=16, TCP_BUFFER_SLEEP=0.01):
             with open(tcplog_location, 'a') as f:
                 for line in tcp_buffer_by_lines:
                     f.write(line.decode('utf-8')+'\n')
-                    tcp_lines.put(line)
+                    tcp_lines.put(line+b'\n')
                     # raw tcp log per line
 
             #logging.info("tcp lines processed: {}".format(len(tcp_buffer)))
