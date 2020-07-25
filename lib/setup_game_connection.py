@@ -61,7 +61,7 @@ def _open_game_socket(jsonconfig, GAME_KEY=''):
 
     return gamesock, lichprocess
 
-def game_connection_controller():
+def game_connection_controller(character=None):
     ''' controller gets its values from this module
     '''
     charactersfile = os.getenv('PYLANTHIA_CHARS', 'characters.json')
@@ -70,7 +70,9 @@ def game_connection_controller():
 
     characters = loadconfig(charactersfile)
     character_config = dict()
-    character = os.getenv('PYLANTHIA_CHARACTER', None)
+    # default to character argument, then `env` character
+    if not character:
+        character = os.getenv('PYLANTHIA_CHARACTER', None)
     if character:
         for c in characters:
             if c["character"] == character:
