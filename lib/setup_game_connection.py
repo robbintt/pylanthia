@@ -75,7 +75,8 @@ def game_connection_controller(character=None):
         character = os.getenv('PYLANTHIA_CHARACTER', None)
     if character:
         for c in characters:
-            if c["character"] == character:
+            # allow greedy character abbreviations and case changes
+            if c["character"][:len(character)].lower() == character.lower():
                 character_config = c
 
     # add character specific config

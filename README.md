@@ -9,7 +9,7 @@ This needs improved to run multiple instances with different configs from the sa
 - Clone this repo
 - Fill in your `config.py`
 - Go into vendor and run `./setup.sh`
-- run pylanthia: `run.sh`
+- run pylanthia: `./run <charname>`
   - Make sure docker is running before doing this
 - follow these steps from [here](https://github.com/rpherbig/dr-scripts/wiki/First-Time-Setup)
   - copy dependency.lic over from dr-scripts
@@ -38,7 +38,9 @@ Add these scripts to your autostart and dependency.lic lich fork autostart.
 
 ## Play Instructions
 
-Use `run.sh <charactername>` to start the game.
+Use `./run <charname>` to start the game.
+
+charname does accept lowercased abbreviations, try it out.
 
 ### Lich setup
 
