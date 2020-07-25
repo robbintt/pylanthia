@@ -11,7 +11,4 @@ env3/
 logs/
 
 characters.json
-config.json
-config.json*
-config.py
 *.key
