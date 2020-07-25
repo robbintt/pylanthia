@@ -1,6 +1,7 @@
 ''' A terminal-based python client for dragonrealms
 
 '''
+import argparse
 import threading
 import queue
 
@@ -24,7 +25,7 @@ log_directory = "logs"
 log_location = os.path.join(log_directory, log_filename)
 logging.basicConfig(filename=log_location, level=logging.DEBUG)
 
-def main():
+def main(character=None):
     ''' Manage all the threads, update to async await
 
     note: preprocess_lines_thread.daemon = True # closes when main thread ends
@@ -75,7 +76,7 @@ def main():
 
     # this should probably be initialized in game_state
     # we should probably try to reacquire a socket if we lose it
-    gamesock, lichprocess = setup_game_connection.game_connection_controller()
+    gamesock, lichprocess = setup_game_connection.game_connection_controller(character)
 
     preprocess_lines_thread = threading.Thread(target=text_processing.preprocess_tcp_lines, args=(game_state, tcp_lines, preprocessed_lines))
     preprocess_lines_thread.daemon = True
@@ -105,4 +106,9 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(description="Specify startup parameters.")
+    parser.add_argument('-c', '--character', dest='character', help="Start directly into a character.", type=str, required=False)
+
+    args = parser.parse_args()
+
+    main(args.character)

@@ -1,0 +1,14 @@
+[
+  {
+    "character": "char1",
+    "username": "username1",
+    "password": "password1",
+    "gamestring": "DR"
+  },
+  {
+    "character": "char2",
+    "username": "username2",
+    "password": "password2",
+    "gamestring": "DR"
+  }
+]

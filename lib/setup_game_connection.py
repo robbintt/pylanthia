@@ -61,13 +61,26 @@ def _open_game_socket(jsonconfig, GAME_KEY=''):
 
     return gamesock, lichprocess
 
-def game_connection_controller():
+def game_connection_controller(character=None):
     ''' controller gets its values from this module
     '''
-    configfile = os.getenv('PYLANTHIA_CONFIG', 'config.json')
-    jsonconfig = loadconfig(configfile)
+    charactersfile = os.getenv('PYLANTHIA_CHARS', 'characters.json')
+    setupfile = os.getenv('PYLANTHIA_SETUP', 'setup.json')
+    jsonconfig = loadconfig(setupfile) # use this config object
 
-    character = jsonconfig["character"]
+    characters = loadconfig(charactersfile)
+    character_config = dict()
+    # default to character argument, then `env` character
+    if not character:
+        character = os.getenv('PYLANTHIA_CHARACTER', None)
+    if character:
+        for c in characters:
+            # allow greedy character abbreviations and case changes
+            if c["character"][:len(character)].lower() == character.lower():
+                character_config = c
+
+    # add character specific config
+    jsonconfig.update(character_config)
     keyfile = eaccess.keyfile_template.format(character)
 
     GAME_KEY = ''
