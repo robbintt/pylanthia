@@ -1,5 +1,3 @@
 #!/bin/bash
 
-PYLANTHIA_CONFIG="config.json"
-
-docker-compose run -e PYLANTHIA_CONFIG=${PYLANTHIA_CONFIG} pylanthia
+docker-compose run -e PYLANTHIA_CHARACTER=${1:?You must specify a character.} pylanthia

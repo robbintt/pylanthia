@@ -38,7 +38,7 @@ Add these scripts to your autostart and dependency.lic lich fork autostart.
 
 ## Play Instructions
 
-Once set up, simply `docker-compose run pylanthia` to start the service.
+Use `run.sh <charactername>` to start the game.
 
 ### Lich setup
 
