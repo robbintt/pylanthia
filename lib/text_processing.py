@@ -87,7 +87,9 @@ def preprocess_tcp_lines(game_state, tcp_lines, preprocessed_lines):
         # block thread on tcp_lines.get()
         tcpline = tcp_lines.get()
         game_state.urwid_views['urwid_tcp_view'].append(tcpline.decode('utf-8').replace('&gt;', '>'))
-        preprocessed_lines.put(chop_xml_and_text_from_line(tcpline.strip())) # might not want to strip the newline here, it might have meaning
+        preprocessed_lines.put(chop_xml_and_text_from_line(tcpline.strip(b'\n'))) # might not want to strip the newline here, it might have meaning
+
+        # add another line processor here and make another gamestate view, associate with a new urwid view, this is a way to get a purely xml driven without touching the old view code
 
 
 def process_lines(preprocessed_lines, text_lines, game_state):
