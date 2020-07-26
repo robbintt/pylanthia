@@ -73,9 +73,9 @@ def main(character=None):
     # TODO: this doesn't seem to work? or if it does, it isn't clean...
     quit_event = threading.Event() # set this flag with quit_event.set() to quit from main thread
 
-    # this should probably be initialized in game_state
+    # this should probably be initialized in game_state or something
     # we should probably try to reacquire a socket if we lose it
-    gamesock, lichprocess = setup_game_connection.game_connection_controller(character)
+    gamesock, lichprocess = setup_game_connection.game_connection_controller(game_state, character)
 
     preprocess_lines_thread = threading.Thread(target=text_processing.preprocess_tcp_lines, args=(game_state, tcp_lines, preprocessed_lines))
     preprocess_lines_thread.daemon = True

@@ -98,8 +98,7 @@ def urwid_main(game_state, text_lines, highlight_list, excludes_list, quit_event
         exit_string += ' '  # separator whitespace
 
     # consider padding roundtime with 3 spaces
-    status_line_string = '[ RT:  {roundtime}{roundtime_stable} ]' + '[{exit_string}]'
-    #status_line_string = '[ RT:  {roundtime} ]' + '[ ' + ' '.join([v for k, v in arrows.items()]) + ' ]'
+    status_line_string = '[ RT:  {roundtime}{roundtime_stable} ][{exit_string}] {character_firstname}'
 
     # imagine a function that adds a space or the arrow depending on
     # whether the compass arrow last received game state
@@ -271,6 +270,10 @@ def urwid_main(game_state, text_lines, highlight_list, excludes_list, quit_event
                 raise Exception('Client has exited, use exception to cleanup for now.')
 
             status_line_contents = dict()
+
+            # set character name
+            status_line_contents["character_firstname"] = game_state.character_firstname
+
             # calculate remaining roundtime
             current_roundtime = int(game_state.roundtime - game_state.time)
             if current_roundtime < 0:

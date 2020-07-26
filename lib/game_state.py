@@ -14,6 +14,7 @@ class GlobalGameState:
         '''
         '''
         self.roundtime = 0
+        self.character_firstname = ""
         self.reported_time = 0 # actual time reported by the server
         self.time = 0 # time reported by the server incremented by client side clock
         self.time_last_command = 0 # the time of the last command submitted
