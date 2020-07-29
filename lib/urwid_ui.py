@@ -52,7 +52,7 @@ def extend_view_buffer(game_state, text_lines, highlight_list, excludes_list):
     return
 
 
-def urwid_main(game_state, text_lines, highlight_list, excludes_list, quit_event, screen_refresh_speed=0.05):
+def urwid_main(game_state, text_lines, highlight_list, excludes_list, screen_refresh_speed=0.05):
     ''' just the main process for urwid... needs renamed and fixed up
     '''
 
@@ -266,7 +266,7 @@ def urwid_main(game_state, text_lines, highlight_list, excludes_list, quit_event
 
             # this really should be in the main thread...
             # urwid has event_loop that can probably handle this
-            if quit_event.is_set():
+            if game_state.quit_event.is_set():
                 raise Exception('Client has exited, use exception to cleanup for now.')
 
             status_line_contents = dict()

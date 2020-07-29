@@ -71,7 +71,7 @@ def main(character=None):
 
 
     # TODO: this doesn't seem to work? or if it does, it isn't clean...
-    quit_event = threading.Event() # set this flag with quit_event.set() to quit from main thread
+    game_state.quit_event = threading.Event() # set this flag with quit_event.set() to quit from main thread
 
     # this should probably be initialized in game_state or something
     # we should probably try to reacquire a socket if we lose it
@@ -101,7 +101,7 @@ def main(character=None):
 
     # start the UI and UI refresh thread
     # urwid must have its own time.sleep somewhere in its loop, since it doesn't dominate everything
-    urwid_ui.urwid_main(game_state, text_lines, highlight_list, excludes_list, quit_event, SCREEN_REFRESH_SPEED)
+    urwid_ui.urwid_main(game_state, text_lines, highlight_list, excludes_list, SCREEN_REFRESH_SPEED)
 
 
 if __name__ == '__main__':
