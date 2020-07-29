@@ -4,6 +4,9 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
+black = "*"
+pre-commit = "*"
+flake8 = "*"
 
 [packages]
 lxml = "==4.2.5"
@@ -13,3 +16,6 @@ urwid-stackedwidget = "*"
 
 [requires]
 python_version = "3.8.0"
+
+[pipenv]
+allow_prereleases = true
