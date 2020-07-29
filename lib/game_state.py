@@ -22,6 +22,7 @@ class GlobalGameState:
         self.reset_exits()
         self.command_history = queue.LifoQueue() # sometimes rt_command_queue takes back the last in
 
+        self.lichprocess = None # set in pylanthia.py, indirection
         self.quit_event = None # set in pylanthia.py, not sure if that's the ideal spot
         self.input_history = list()
         self.input_history_count = 0 # must be set when used by history_scroll_mode

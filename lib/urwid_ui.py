@@ -6,6 +6,8 @@ import queue
 import itertools
 import re
 import textwrap
+import os
+import signal
 
 import urwid
 import urwid_readline
@@ -133,18 +135,13 @@ def urwid_main(game_state, text_lines, highlight_list, excludes_list, screen_ref
     def set_title(widget, title):
         mainframe.set_title(title)
     def quit(*args, **kwargs):
-        raise urwid.ExitMainLoop()
-
-
-
+        pass # this method is never called
 
     def unhandled_input(txt, key):
-        ''' 
+        '''
         much of this input should be handled in the pile or widgets inside the pile
-        
         q: why is this called unhandled input if it is the input handler??
         a: ... urwid thing, this can probably be changed to whatever is appropriate, just use care
-
         '''
         if key in ("`"):
             if main_window_stack.current + 1 >= main_window_stack.widget_count:
@@ -230,7 +227,8 @@ def urwid_main(game_state, text_lines, highlight_list, excludes_list, screen_ref
         # not working
         if key in ("ctrl q", "ctrl Q"):
             #raise urwid.ExitMainLoop()
-            quit()
+            #quit()
+            pass
 
 
         #input_box.set_edit_text("unknown key: " + repr(key))
@@ -264,10 +262,12 @@ def urwid_main(game_state, text_lines, highlight_list, excludes_list, screen_ref
             # it would be better to kick this off inside loop.run I think
             time.sleep(screen_refresh_speed)
 
-            # this really should be in the main thread...
-            # urwid has event_loop that can probably handle this
+            # lets test this somewhere else...
             if game_state.quit_event.is_set():
-                raise Exception('Client has exited, use exception to cleanup for now.')
+                # from: https://stackoverflow.com/a/7099229/1693693
+                os.kill(os.getpid(), signal.SIGINT) # give SIGINT to main for cleanup
+                # TODO: raise doesn't interrupt main, not working, explore later
+                #raise urwid.ExitMainLoop()
 
             status_line_contents = dict()
 

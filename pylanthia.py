@@ -75,7 +75,7 @@ def main(character=None):
 
     # this should probably be initialized in game_state or something
     # we should probably try to reacquire a socket if we lose it
-    gamesock, lichprocess = setup_game_connection.game_connection_controller(game_state, character)
+    gamesock, game_state.lichprocess = setup_game_connection.game_connection_controller(game_state, character)
 
     preprocess_lines_thread = threading.Thread(target=text_processing.preprocess_tcp_lines, args=(game_state, tcp_lines, preprocessed_lines))
     preprocess_lines_thread.daemon = True
@@ -110,4 +110,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    main(args.character)
+    try:
+        main(args.character)
+    except KeyboardInterrupt:
+        print("Exiting gracefully through either ctrl-c or game exit/quit command.")

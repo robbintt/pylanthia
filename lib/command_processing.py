@@ -28,7 +28,6 @@ def process_command_queue(game_state, tcp_lines, gamesock, COMMAND_PROCESS_SPEED
             game_state.time_last_command = game_state.time
 
             if submitted_command in [b'exit', b'quit']:
-                logging.info("quit triggered")
                 game_state.quit_event.set()
 
             continue # ensure this whole queue is processed before the rt_command_queue
