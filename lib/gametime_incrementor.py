@@ -1,12 +1,13 @@
-'''
-'''
+"""
+"""
 import time
 
-def gametime_incrementer(game_state, MAX_IDLE_TIME=60*60*2):
-    '''
+
+def gametime_incrementer(game_state, MAX_IDLE_TIME=60 * 60 * 2):
+    """
 
     move max idle time to config
-    '''
+    """
     while True:
         time.sleep(1)
 
@@ -21,8 +22,6 @@ def gametime_incrementer(game_state, MAX_IDLE_TIME=60*60*2):
             game_state.time_last_command = game_state.time
 
         # quit if idle too long
-        time_since_last_command = game_state.time - game_state.time_last_command 
+        time_since_last_command = game_state.time - game_state.time_last_command
         if time_since_last_command >= MAX_IDLE_TIME:
-            game_state.command_queue.put(b'quit')
-
-
+            game_state.command_queue.put(b"quit")

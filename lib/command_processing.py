@@ -1,17 +1,18 @@
-'''
-'''
+"""
+"""
 import time
 import logging
 
 logging.getLogger(__name__)
 
+
 def process_command_queue(game_state, tcp_lines, gamesock, COMMAND_PROCESS_SPEED=0.3):
-    ''' process game commands from the submit queue
+    """ process game commands from the submit queue
 
     need some hotkey to dump the queue
 
     don't process for n seconds if you got the response: "...wait <n> seconds."
-    '''
+    """
     while True:
 
         # this sleep throttles max command processing speed
@@ -20,7 +21,7 @@ def process_command_queue(game_state, tcp_lines, gamesock, COMMAND_PROCESS_SPEED
         # this process is already exited, we need to check the health of the lich process
         # maybe lich launcher process could return the pid for lich
         # then we could poll the pid and if not alive, exit
-        #if game_state.lichprocess.poll() is not None:
+        # if game_state.lichprocess.poll() is not None:
         #    print("Lich process is complete: {}".format(game_state.lichprocess.poll()))
         #    # if lich exits, exit the game
         #    # TODO: this will be removed if the game process is separated from the game connection
@@ -30,16 +31,16 @@ def process_command_queue(game_state, tcp_lines, gamesock, COMMAND_PROCESS_SPEED
             # maybe timestamped as its own output stream, so it can be turned off on certain windows
             submitted_command = game_state.command_queue.get()
 
-            gamesock.sendall(submitted_command + b'\n')
-            tcp_lines.put(b'> ' + submitted_command)
+            gamesock.sendall(submitted_command + b"\n")
+            tcp_lines.put(b"> " + submitted_command)
             logging.info(submitted_command)
             game_state.command_history.put(submitted_command)
             game_state.time_last_command = game_state.time
 
-            if submitted_command in [b'exit', b'quit']:
+            if submitted_command in [b"exit", b"quit"]:
                 game_state.quit_event.set()
 
-            continue # ensure this whole queue is processed before the rt_command_queue
+            continue  # ensure this whole queue is processed before the rt_command_queue
 
         # process the rt_command_queue exactly as if a player had submitted again
         # but always process the most recent player command_queue before the rt_command_queue

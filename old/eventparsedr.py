@@ -1,4 +1,4 @@
-''' Parse the xml-like token stream coming from DR
+""" Parse the xml-like token stream coming from DR
 
 User iterwalk to walk the stream
 
@@ -25,32 +25,33 @@ IMPORTANT:
     - I think I need all my windows to be set on... how do i do that: deaths, login, logout, etc.
     - Players will need to turn all these on to get all the streams
     - If one is off the stream should just be empty though, no big deal
-'''
+"""
 from lxml import etree
-from io import BytesIO 
+from io import BytesIO
 from collections import deque
 
-def parse_broken_xml(broken_xml):
-    ''' Chop up some broken xml and get any data out
-    '''
 
-    events = ('start', 'end')
-    context = etree.iterparse(BytesIO(broken_xml.encode('utf-8')), events=events, recover=True)
+def parse_broken_xml(broken_xml):
+    """ Chop up some broken xml and get any data out
+    """
+
+    events = ("start", "end")
+    context = etree.iterparse(
+        BytesIO(broken_xml.encode("utf-8")), events=events, recover=True
+    )
 
     return context
 
 
+if __name__ == "__main__":
 
-if __name__ == '__main__':
-
-    events = ('start', 'end')
-    #parser = etree.XMLPullParser(events, recover=True)
-
+    events = ("start", "end")
+    # parser = etree.XMLPullParser(events, recover=True)
 
     # replay some lines from a raw log
     # if you don't have this, just make it here or in your preferred location
     # if you have no raw logs, run the client for a bit to build one
-    with open('../logs/tcp.txt') as f:
+    with open("../logs/tcp.txt") as f:
         raw_lines = f.readlines()
 
     def print_events(parser):
@@ -66,28 +67,32 @@ if __name__ == '__main__':
     i = 1
     while i < len(raw_lines):
         line = raw_lines[i]
-        if line[0] == '<':
-            parser = etree.XMLPullParser(events, recover=True) # we don't want to raise errors
+        if line[0] == "<":
+            parser = etree.XMLPullParser(
+                events, recover=True
+            )  # we don't want to raise errors
             print("raw=", line)
             parser.feed(line)
             print_events(parser)
-            import time; time.sleep(1)
+            import time
+
+            time.sleep(1)
         else:
             # so far this is only <d> tags and <a> links in the game copy...
             # i think <d> tags are monster bold. we can manage them elsewhere
-            if '<' in line:
+            if "<" in line:
                 print("THE NEXT LINE HAS XML IN THE MIDDLE:")
             print("text line=", line)
         i += 1
 
-    '''
+    """
     labelled_raw_lines = deque()
     for line in raw_lines:
         if line[0] == '<':
             labelled_raw_lines.append(('xml', line))
         else:
             labelled_raw_lines.append(('text', line))
-            
+
     final_lines = deque()
     for line in labelled_raw_lines:
         if line[0] == 'xml':
@@ -100,23 +105,20 @@ if __name__ == '__main__':
         elif line[0] == 'text':
             final_lines.append(line[1])
             print(line[1])
-    '''
+    """
 
-    '''
+    """
     xml = '<root><a><b /></a><c /></root>'
     broken_xml = '<root><a><b /></a><c />'
     print(broken_xml)
 
     result = parse_broken_xml(broken_xml)
-    '''
+    """
 
-    '''
+    """
     for action, elem in result:
         print("{}: {}, tag: {}".format(action, elem, elem.tag))
 
 
     print(context.root.tag)
-    '''
-
-
-
+    """
