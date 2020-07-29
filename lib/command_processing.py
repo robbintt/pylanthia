@@ -10,12 +10,21 @@ def process_command_queue(game_state, tcp_lines, gamesock, COMMAND_PROCESS_SPEED
 
     need some hotkey to dump the queue
 
-    don't process for n seconds if you got the response: "...wait 1 seconds."
+    don't process for n seconds if you got the response: "...wait <n> seconds."
     '''
     while True:
 
         # this sleep throttles max command processing speed
         time.sleep(COMMAND_PROCESS_SPEED)
+
+        # this process is already exited, we need to check the health of the lich process
+        # maybe lich launcher process could return the pid for lich
+        # then we could poll the pid and if not alive, exit
+        #if game_state.lichprocess.poll() is not None:
+        #    print("Lich process is complete: {}".format(game_state.lichprocess.poll()))
+        #    # if lich exits, exit the game
+        #    # TODO: this will be removed if the game process is separated from the game connection
+        #    game_state.quit_event.set()
 
         if not game_state.command_queue.empty():
             # maybe timestamped as its own output stream, so it can be turned off on certain windows
@@ -47,5 +56,3 @@ def process_command_queue(game_state, tcp_lines, gamesock, COMMAND_PROCESS_SPEED
             current_roundtime = int(game_state.roundtime - game_state.time)
             if current_roundtime == 0:
                 game_state.command_queue.put(game_state.rt_command_queue.get())
-
-
