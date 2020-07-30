@@ -17,13 +17,13 @@ RUN mkdir /app
 WORKDIR /app
 COPY Pipfile Pipfile
 COPY Pipfile.lock Pipfile.lock
+COPY .python-version .python-version
 
 # set up pyenv
 ENV PYENV_ROOT /.pyenv
 RUN curl https://pyenv.run | bash
 ENV PATH $PYENV_ROOT/shims:$PYENV_ROOT/bin:$PATH
-# annoyingly, i haven't yet mounted the version specified in .python-version
-RUN pyenv install 3.8.0
+RUN pyenv install
 
 # set up pipenv
 RUN pyenv exec pipenv sync

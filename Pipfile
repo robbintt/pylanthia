@@ -15,7 +15,7 @@ urwid-readline = "==0.10"
 urwid-stackedwidget = "*"
 
 [requires]
-python_version = "3.8.0"
+python_version = "3.8.4"
 
 [pipenv]
 allow_prereleases = true
