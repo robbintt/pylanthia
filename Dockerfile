@@ -9,8 +9,6 @@ RUN gem install sqlite3
 
 # lazy setup dependencies, this could be more explicit for pyenv/pipenv
 RUN apt-get update
-RUN apt-get install -y python3-pip
-RUN pip3 install pipenv
 
 # this gets used to setup pipenv, then the volume shadows it
 RUN mkdir /app
@@ -26,4 +24,5 @@ ENV PATH $PYENV_ROOT/shims:$PYENV_ROOT/bin:$PATH
 RUN pyenv install
 
 # set up pipenv
+RUN pyenv exec pip install pipenv
 RUN pyenv exec pipenv sync
