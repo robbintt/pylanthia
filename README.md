@@ -7,26 +7,27 @@ A terminal-based dragonrealms client in Python. Lich is used as a scripting back
 This needs improved to run multiple instances with different configs from the same install.
 
 - Clone this repo
-- Fill in your `config.py`
+- Fill in at least 1 character in `characters.json`
 - Go into vendor and run `./setup.sh`
-- run pylanthia: `./run <charname>`
+- run pylanthia: `./play <charname>`
   - Make sure docker is running before doing this
+  - if you pull changes you may need to rebuild the image
 - follow these steps from [here](https://github.com/rpherbig/dr-scripts/wiki/First-Time-Setup)
   - copy dependency.lic over from dr-scripts
-    - this is the equivalent of `\;repository download dependency.lic`
-  - `\;dependency install
-  - `\;e use_lich_fork`
+    - this is the equivalent of `;repository download dependency.lic`
+  - `;dependency install
+  - `;e toggle_developer_mode`
+    - more details: [these instructions](https://github.com/rpherbig/dr-scripts/wiki/Developer-Setup)
+  - `;e use_lich_fork`
   - sometimes you need to restart DR a few times at this step
     - It will say "invalid game client, choose one of the following..."
     - Just restart and debug a bit, all config seems right.
-  - `\;repository download-mapdb` (works great)
-  - \;autostart add --global roomnumbers
+  - `;repository download-mapdb` (works great)
+  - ;autostart add --global roomnumbers
 - Delete backups made by repository: ```rm lich/scripts/*.bak```
 - Go into vendor/lich-scripts and run `./update.sh`
+  - must happen after `;e toggle_developer_mode`
 
-### Optional: dependency.lic developer setup
-
-- Follow [these instructions](https://github.com/rpherbig/dr-scripts/wiki/Developer-Setup)
 
 ## Autostart
 
