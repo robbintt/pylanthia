@@ -11,4 +11,4 @@ env3/
 logs/
 
 characters.json
-*.key
+keys.json

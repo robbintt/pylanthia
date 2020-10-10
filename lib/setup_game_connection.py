@@ -87,17 +87,39 @@ def game_connection_controller(game_state, character=None):
             if c["character"][: len(character)].lower() == character.lower():
                 character_config = c
                 character = c["character"]  # get matched exact character name
+                username = c["username"]  # get matched exact character name
 
     game_state.character_firstname = character
 
-    # add character specific config
     jsonconfig.update(character_config)
-    keyfile = eaccess.keyfile_template.format(character)
 
+    # get the cached character key unless the username has reused the key for another character
+    # store a dict of cached keys and their associated character
+    # if the key is reassigned, we do not wnat to keep it
+    # we also want to store all cached keys in 1 file
+    # to prevent key reuse we will store per player
+    keyfile = eaccess.keyfile_template
     GAME_KEY = ""
     if os.path.isfile(keyfile):
         with open(keyfile) as f:
-            GAME_KEY = f.read().encode("utf-8")
+            try:
+                keys_json = json.load(f)
+            except json.decoder.JSONDecodeError:
+                keys_json = dict() # alternatively skip the rest of the with block
+
+            try:
+                # this exists because if you login with a consective character on one
+                # account, then the key is reused, so the first and second character
+                # logged into will both have the same key, but the second character
+                # will always be logged into and the first character would be inaccessible.
+                # however, you do receive a new key if you ask for one.
+                _last_character, _LAST_GAME_KEY = keys_json[username]
+                # only conserve the key on the user if the character is also the same
+                if _last_character == character:
+                    GAME_KEY = _LAST_GAME_KEY.encode("utf-8")
+            # no game key for this username
+            except KeyError:
+                pass
 
     if GAME_KEY:
         try:

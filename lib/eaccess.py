@@ -7,8 +7,9 @@ SGE Protocol: https://gswiki.play.net/SGE_protocol/saved_posts
 import socket
 import time
 import os
+import json
 
-keyfile_template = ".{}.key"
+keyfile_template = "keys.json"
 
 
 def get_game_key(host, port, username, password, character, gamestring):
@@ -133,8 +134,13 @@ def get_game_key(host, port, username, password, character, gamestring):
     # character key is now attached to the game key
     print("ready to play: ", tcp_buffer)
 
-    # store the last game key
-    character_utf8 = character.decode("utf-8")
-    with open(keyfile_template.format(character_utf8), "w") as f:
-        f.write(KEY.decode("utf-8"))
+    # store the last game key for each player, along with the associated character
+    with open(keyfile_template, "r") as f:
+        try:
+            keys = json.load(f)
+        except json.decoder.JSONDecodeError:
+            keys = dict()
+        keys[username.decode("utf-8")] = [character.decode("utf-8"), KEY.decode("utf-8")]
+    with open(keyfile_template, "w") as f:
+        json.dump(keys, f)
     return KEY
