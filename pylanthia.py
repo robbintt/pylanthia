@@ -65,9 +65,6 @@ def main(character=None):
     # here we make the file, which may make the handle accessible? worth a shot
     logging.debug("Initating logfile.")
 
-    highlight_set = set(text_processing.line_config_processor("data/highlights.txt"))
-    excludes_set = set(text_processing.line_config_processor("data/excludes.txt"))
-
     # TODO: this doesn't seem to work? or if it does, it isn't clean...
     game_state.quit_event = (
         threading.Event()
@@ -116,7 +113,7 @@ def main(character=None):
     # start the UI and UI refresh thread
     # urwid must have its own time.sleep somewhere in its loop, since it doesn't dominate everything
     urwid_ui.urwid_main(
-        game_state, text_lines, highlight_set, excludes_set, game_state.SCREEN_REFRESH_SPEED
+        game_state, text_lines, game_state.SCREEN_REFRESH_SPEED
     )
 
 

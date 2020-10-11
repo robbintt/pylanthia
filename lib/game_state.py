@@ -3,6 +3,7 @@
 import queue
 from collections import deque
 
+from lib import text_processing
 
 class GlobalGameState:
     """ Eventually handle all global game state here
@@ -19,6 +20,12 @@ class GlobalGameState:
         self.SCREEN_REFRESH_SPEED = 0.10
         self.TCP_BUFFER_SLEEP = 0.0001
         self.BUFSIZE = 4
+
+        self.highlight_file = "data/highlights.txt"
+        self.excludes_file = "data/excludes.txt"
+
+        self.highlight_set = set(text_processing.line_config_processor(self.highlight_file))
+        self.excludes_set = set(text_processing.line_config_processor(self.excludes_file))
 
         self.roundtime = 0
         self.character_firstname = ""

@@ -20,7 +20,7 @@ import logging
 logging.getLogger(__name__)
 
 
-def extend_view_buffer(game_state, text_lines, highlight_set, excludes_set):
+def extend_view_buffer(game_state, text_lines):
     """
     # it makes sense for the view contents constructor to be elsewhere anyways
     this probably belongs somewhere else
@@ -40,14 +40,14 @@ def extend_view_buffer(game_state, text_lines, highlight_set, excludes_set):
         )
 
         _skip_excluded_line = False
-        for exclude_substr in excludes_set:
+        for exclude_substr in game_state.excludes_set:
             if exclude_substr in new_line_str:
                 _skip_excluded_line = True  # set flag to continue parent
                 break
         if _skip_excluded_line == True:
             continue
 
-        for highlight in highlight_set:
+        for highlight in game_state.highlight_set:
             if highlight in new_line_str:
                 new_line_str = ("highlight", new_line_str)
                 break  # i guess just 1 highlight per string for now
@@ -62,9 +62,7 @@ def extend_view_buffer(game_state, text_lines, highlight_set, excludes_set):
     return
 
 
-def urwid_main(
-    game_state, text_lines, highlight_set, excludes_set, screen_refresh_speed=0.05
-):
+def urwid_main(game_state, text_lines, screen_refresh_speed=0.05):
     """ just the main process for urwid... needs renamed and fixed up
     """
 
@@ -340,9 +338,7 @@ def urwid_main(
 
             # fill up the urwid main view text
             if not text_lines.empty():
-                extend_view_buffer(
-                    game_state, text_lines, highlight_set, excludes_set
-                )
+                extend_view_buffer(game_state, text_lines)
 
             # this target is one below main_window so lets try that instead
             # mainframe is the pile, contents[0] is the first item
