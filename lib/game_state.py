@@ -3,6 +3,7 @@
 import queue
 from collections import deque
 
+import re
 from lib import text_processing
 
 class GlobalGameState:
@@ -23,9 +24,11 @@ class GlobalGameState:
 
         self.highlight_file = "data/highlights.txt"
         self.excludes_file = "data/excludes.txt"
+        self.excludes_regex_file = "data/excludes_regex.txt"
 
         self.highlight_set = set(text_processing.line_config_processor(self.highlight_file))
         self.excludes_set = set(text_processing.line_config_processor(self.excludes_file))
+        self.excludes_regex = [re.compile(text) for text in text_processing.line_config_processor(self.excludes_regex_file)]
 
         self.roundtime = 0
         self.character_firstname = ""

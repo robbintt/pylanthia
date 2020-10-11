@@ -1,7 +1,10 @@
 # highlights template: partial line is fine
 # empty lines are fine, comment start with #
 
+You feel fully attuned to the mana streams again.
 You feel fully prepared to cast your spell.
+You are already preparing
+You have already fully prepared
 You strain
 You feel intense strain
 # doesnt work due to current junk line parsing

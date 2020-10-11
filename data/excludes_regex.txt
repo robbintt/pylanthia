@@ -1,0 +1,13 @@
+# next are too complex, needs regex
+
+# Ascheton begins a quiet gavotte on his copper zills.  # too complex, needs regex
+\w begins a quiet gavotte on (\w\s)+\.
+The bandages binding \w's (\w\s)+ become useless and fall apart.
+
+# these are the ones i did use that can be improved with regex
+# future: use regex to find these with more precision
+# A dull crimson glow radiates from Szoengi's wooden medallion.
+# The bandages binding Glitter's left hand become useless and fall apart.
+# Synaxil exudes life and vitality, rutilant sparks dancing around him.
+# Brisk, swirling winds whorl around Grenhart, forming minute ice crystals that are strewn through the air like stars hung in a winter sky.
+# Ascheton finishes playing a quiet gavotte on his copper zills.

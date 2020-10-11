@@ -45,7 +45,17 @@ def extend_view_buffer(game_state, text_lines):
         _skip_excluded_line = False
         for exclude_substr in game_state.excludes_set:
             if exclude_substr in new_line_str:
-                _skip_excluded_line = True  # set flag to continue parent
+                _skip_excluded_line = True  # set flag to continue
+                break
+        if _skip_excluded_line == True:
+            continue
+
+        _skip_excluded_line = False
+        for exclude_regex in game_state.excludes_regex:
+            # add the following argument to search to ignore case
+            #if exclude_regex.search(new_line_str, flags=re.IGNORECASE):
+            if exclude_regex.search(new_line_str):
+                _skip_excluded_line = True  # set flag to continue
                 break
         if _skip_excluded_line == True:
             continue
