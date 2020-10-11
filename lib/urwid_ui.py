@@ -26,9 +26,12 @@ def extend_view_buffer(game_state, text_lines):
     this probably belongs somewhere else
     """
     i = 0
-    #max_lines_per_refresh = 50  # not sure if this is necessary
-    #while not text_lines.empty() and i < max_lines_per_refresh:
-    while not text_lines.empty():
+    # the point of this is to make sure the buffer didn't fill faster
+    # than it could be emptied, effectively never refreshing the player
+    # this is a concern but maybe we should turn it up, hard to diagnose
+    # maybe just log into a diagnostic log whenever this is above threshold
+    max_lines_per_refresh = 500
+    while not text_lines.empty() and i < max_lines_per_refresh:
         new_line = text_lines.get()
 
         # munge new_line and convert bytes->utf-8
