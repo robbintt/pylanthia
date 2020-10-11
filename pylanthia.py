@@ -65,12 +65,8 @@ def main(character=None):
     # here we make the file, which may make the handle accessible? worth a shot
     logging.debug("Initating logfile.")
 
-    # remove or move to config
-    COMMAND_PROCESSING_SPEED = 0.05
-    SCREEN_REFRESH_SPEED = 0.05
-
-    highlight_list = text_processing.line_config_processor("data/highlights.txt")
-    excludes_list = text_processing.line_config_processor("data/excludes.txt")
+    highlight_set = set(text_processing.line_config_processor("data/highlights.txt"))
+    excludes_set = set(text_processing.line_config_processor("data/excludes.txt"))
 
     # TODO: this doesn't seem to work? or if it does, it isn't clean...
     game_state.quit_event = (
@@ -97,18 +93,16 @@ def main(character=None):
     process_lines_thread.daemon = True
     process_lines_thread.start()
 
-    BUFSIZE = 4
-    TCP_BUFFER_SLEEP = 0.0001
     tcp_thread = threading.Thread(
         target=get_tcp_lines.get_tcp_lines,
-        args=(tcp_lines, gamesock, BUFSIZE, TCP_BUFFER_SLEEP),
+        args=(tcp_lines, gamesock, game_state.BUFSIZE, game_state.TCP_BUFFER_SLEEP),
     )
     tcp_thread.daemon = True
     tcp_thread.start()
 
     command_queue_thread = threading.Thread(
         target=command_processing.process_command_queue,
-        args=(game_state, tcp_lines, gamesock, COMMAND_PROCESSING_SPEED),
+        args=(game_state, tcp_lines, gamesock, game_state.COMMAND_PROCESSING_SPEED),
     )
     command_queue_thread.daemon = True
     command_queue_thread.start()
@@ -122,7 +116,7 @@ def main(character=None):
     # start the UI and UI refresh thread
     # urwid must have its own time.sleep somewhere in its loop, since it doesn't dominate everything
     urwid_ui.urwid_main(
-        game_state, text_lines, highlight_list, excludes_list, SCREEN_REFRESH_SPEED
+        game_state, text_lines, highlight_set, excludes_set, game_state.SCREEN_REFRESH_SPEED
     )
 
 

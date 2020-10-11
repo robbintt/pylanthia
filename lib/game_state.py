@@ -15,6 +15,11 @@ class GlobalGameState:
     def __init__(self):
         """
         """
+        self.COMMAND_PROCESSING_SPEED = 0.05
+        self.SCREEN_REFRESH_SPEED = 0.10
+        self.TCP_BUFFER_SLEEP = 0.0001
+        self.BUFSIZE = 4
+
         self.roundtime = 0
         self.character_firstname = ""
         self.reported_time = 0  # actual time reported by the server
@@ -36,6 +41,7 @@ class GlobalGameState:
 
         self.urwid_scrollbar_last = 0
         self.main_view_text = ""
+        self.status_line_contents = dict()
 
         # this can't be None or the slowdown on redraw gets absurdly bad
         # WINDOW_BUFFER_SIZE = 1000 # this was always fine, i think?

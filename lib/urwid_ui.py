@@ -20,14 +20,15 @@ import logging
 logging.getLogger(__name__)
 
 
-def extend_view_buffer(game_state, text_lines, highlight_list, excludes_list):
+def extend_view_buffer(game_state, text_lines, highlight_set, excludes_set):
     """
     # it makes sense for the view contents constructor to be elsewhere anyways
     this probably belongs somewhere else
     """
     i = 0
-    max_lines_per_refresh = 50  # not sure if this is necessary
-    while not text_lines.empty() and i < max_lines_per_refresh:
+    #max_lines_per_refresh = 50  # not sure if this is necessary
+    #while not text_lines.empty() and i < max_lines_per_refresh:
+    while not text_lines.empty():
         new_line = text_lines.get()
 
         # munge new_line and convert bytes->utf-8
@@ -39,14 +40,14 @@ def extend_view_buffer(game_state, text_lines, highlight_list, excludes_list):
         )
 
         _skip_excluded_line = False
-        for exclude_substr in excludes_list:
+        for exclude_substr in excludes_set:
             if exclude_substr in new_line_str:
                 _skip_excluded_line = True  # set flag to continue parent
                 break
         if _skip_excluded_line == True:
             continue
 
-        for highlight in highlight_list:
+        for highlight in highlight_set:
             if highlight in new_line_str:
                 new_line_str = ("highlight", new_line_str)
                 break  # i guess just 1 highlight per string for now
@@ -62,7 +63,7 @@ def extend_view_buffer(game_state, text_lines, highlight_list, excludes_list):
 
 
 def urwid_main(
-    game_state, text_lines, highlight_list, excludes_list, screen_refresh_speed=0.05
+    game_state, text_lines, highlight_set, excludes_set, screen_refresh_speed=0.05
 ):
     """ just the main process for urwid... needs renamed and fixed up
     """
@@ -298,10 +299,8 @@ def urwid_main(
                 # TODO: raise doesn't interrupt main, not working, explore later
                 # raise urwid.ExitMainLoop()
 
-            status_line_contents = dict()
-
             # set character name
-            status_line_contents["character_firstname"] = game_state.character_firstname
+            game_state.status_line_contents["character_firstname"] = game_state.character_firstname
 
             # calculate remaining roundtime
             current_roundtime = int(game_state.roundtime - game_state.time)
@@ -309,10 +308,10 @@ def urwid_main(
                 current_roundtime = 0
             if current_roundtime < 10:
                 # pad < 10
-                status_line_contents["roundtime"] = " " + str(current_roundtime)
+                game_state.status_line_contents["roundtime"] = " " + str(current_roundtime)
             else:
                 # don't pad > 10, note, for roundtimes 100+ there will be a shift in the UI. #wontfix
-                status_line_contents["roundtime"] = "" + str(current_roundtime)
+                game_state.status_line_contents["roundtime"] = "" + str(current_roundtime)
 
             exit_string = ""
             for k, v in arrows.items():
@@ -322,18 +321,18 @@ def urwid_main(
                     exit_string += " " * len(v)  # preserve spacing from glyph
                 exit_string += " "  # separator whitespace
 
-            status_line_contents["exit_string"] = exit_string
+            game_state.status_line_contents["exit_string"] = exit_string
 
             # show the roundtime stable indicator if both time and roundtime are reported
             # this will be false only when the displayed roundtime is based on projected time
             # (game_state.time is projected time)
             if game_state.reported_time >= game_state.roundtime:
-                status_line_contents["roundtime_stable"] = "."
+                game_state.status_line_contents["roundtime_stable"] = "."
             else:
-                status_line_contents["roundtime_stable"] = " "
+                game_state.status_line_contents["roundtime_stable"] = " "
 
             # format the status line with the current content values
-            status_line_output = status_line_string.format(**status_line_contents)
+            status_line_output = status_line_string.format(**game_state.status_line_contents)
             # set the status line
             mainframe.contents[1][0].original_widget.set_text(
                 ("statusbar", status_line_output)
@@ -342,7 +341,7 @@ def urwid_main(
             # fill up the urwid main view text
             if not text_lines.empty():
                 extend_view_buffer(
-                    game_state, text_lines, highlight_list, excludes_list
+                    game_state, text_lines, highlight_set, excludes_set
                 )
 
             # this target is one below main_window so lets try that instead
