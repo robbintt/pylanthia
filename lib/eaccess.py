@@ -135,12 +135,17 @@ def get_game_key(host, port, username, password, character, gamestring):
     print("ready to play: ", tcp_buffer)
 
     # store the last game key for each player, along with the associated character
-    with open(keyfile_template, "r") as f:
-        try:
-            keys = json.load(f)
-        except json.decoder.JSONDecodeError:
-            keys = dict()
+    filefound = False
+    try:
+        with open(keyfile_template, "r") as f:
+            try:
+                keys = json.load(f)
+            except json.decoder.JSONDecodeError:
+                keys = dict()
         keys[username.decode("utf-8")] = [character.decode("utf-8"), KEY.decode("utf-8")]
+    except FileNotFoundError:
+        keys = dict()
+    keys[username.decode("utf-8")] = [character.decode("utf-8"), KEY.decode("utf-8")]
     with open(keyfile_template, "w") as f:
         json.dump(keys, f)
     return KEY

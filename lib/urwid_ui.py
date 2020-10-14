@@ -121,11 +121,6 @@ def urwid_main(game_state, text_lines, screen_refresh_speed=0.05):
             exit_string += " " * len(v)  # preserve spacing from glyph
         exit_string += " "  # separator whitespace
 
-    # consider padding roundtime with 3 spaces
-    status_line_string = (
-        "[ RT:  {roundtime}{roundtime_stable} ][{exit_string}] {character_firstname}"
-    )
-
     # imagine a function that adds a space or the arrow depending on
     # whether the compass arrow last received game state
     # currently just used to display them all as a placeholder
@@ -149,7 +144,7 @@ def urwid_main(game_state, text_lines, screen_refresh_speed=0.05):
         "> ", ""
     )  # pretty sure urwid_readline package needs Python3
 
-    status_line = urwid.Text(status_line_string)
+    status_line = urwid.Text(game_state.status_line_string)
 
     mainframe = urwid.Pile(
         [
@@ -343,7 +338,7 @@ def urwid_main(game_state, text_lines, screen_refresh_speed=0.05):
                 game_state.status_line_contents["roundtime_stable"] = " "
 
             # format the status line with the current content values
-            status_line_output = status_line_string.format(**game_state.status_line_contents)
+            status_line_output = game_state.status_line_string.format(**game_state.status_line_contents)[:80]
             # set the status line
             mainframe.contents[1][0].original_widget.set_text(
                 ("statusbar", status_line_output)
