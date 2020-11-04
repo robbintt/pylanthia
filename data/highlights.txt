@@ -9,3 +9,7 @@ You strain
 You feel intense strain
 # doesnt work due to current junk line parsing
 You feel intense strain as you try to manipulate the mana streams to form this pattern, and you are not certain that you will have enough mental stamina to complete it.
+
+# Hollow Eve
+You fish
+Darkbox

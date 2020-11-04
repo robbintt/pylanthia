@@ -1,8 +1,64 @@
 # next are too complex, needs regex
 
 # Ascheton begins a quiet gavotte on his copper zills.  # too complex, needs regex
+
+
 \w begins a quiet gavotte on (\w\s)+\.
 The bandages binding \w's (\w\s)+ become useless and fall apart.
+
+
+# ATMOS
+\w+'s serpent earcuff coils and quickly bites into \w+.  \w+ flinches but quickly relaxes, looking a little better than before.
+The thick agonite earcuff tightens itself against \w+'s ear, causing the jagged shards of xenomite to bite into \w+ skin.  \w+ looks around, startled for a brief moment.
+\w+'s blighted gold bracelet flares with radiant light, and \w+ looks more at ease than before.
+The studs on \w+'s jaguar-pelt wristcuff flicker briefly.
+The beads on \w+'s jaguar-pelt armband's flicker briefly.
+The spikes in \w+'s diamond-hide wristcuff flicker briefly.
+The eyes of \w+'s monk pendant flash white for a moment.
+An icy breeze suddenly stirs around \w+'s feet, rising in a blue-white spiral that drags several dust motes into the air that catch and glimmer in the ambient light.
+\w+'s moonsilver armband is enveloped in an eerie black glow.
+\w+ grimaces slightly as their taipan coils tightly around their arm and flicks its tongue across their skin.
+The buckle on \w+'s leather thighband pulses with a soft light.
+\w+ flinches slightly as static electricity is discharged from \w+ damite diadem into \w+ temples.
+Like the trembling illusion of heat haze, a shimmer runs over \w+'s thighband.  The mirage is gone as quickly as it appeared.
+The hue of \w+'s earrings dulls for a moment, and then a sheen washes over it, making the color brighter again.
+The dwalgim on \w+'s crown pulses with a soft light.
+
+# PETS
+
+a half dozen bees
+a pudgy lab rat
+vivacious azure kitten
+'s black rat
+'s otter
+'s weasel
+diamond snail
+velvety black jumping spider
+white and grey rat
+white-bellied brown rat
+red-eyed white rat
+temple rat
+lab rat
+fuzzy-faced black rat
+numerous bees
+bees swarm
+
+
+# TRAINERS
+\w+ exhales softly on \w+ sanowret crystal, and scintillating sparks of light dance across its surface.
+\w+ gazes intently into \w+ sanowret crystal, and scintillating sparks of light dance across its surface.
+The buckle on Thires's leather thighband pulses with a soft light.
+
+
+# HE
+
+\w+ drops some coins into the Darkbox and reaches inside it.
+\w+ removes \w+ hand from the Darkbox looking both relieved and disappointed.
+Before \w+'s hand is free of the Darkbox a hissing creature darts from the depths of the box and crushes \w+ hand!
+\w+ drops \w+ raffle ticket in a bucket of viscous gloop.
+\w+ tears off a (\w\s)+raffle ticket.
+
+
 
 # these are the ones i did use that can be improved with regex
 # future: use regex to find these with more precision
