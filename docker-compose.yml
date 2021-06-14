@@ -4,7 +4,7 @@ services:
     container_name: pylanthia_app
     build: .
     volumes:
-      - .:/app:delegated
+      - .:/app:consistent
     entrypoint: "/bin/bash -c"
     command: "/app/entrypoint.sh"
   debug:
@@ -13,5 +13,5 @@ services:
     ports:
       - "4901:4901"
     volumes:
-      - .:/app:delegated
+      - .:/app:consistent
     entrypoint: "/bin/bash"
