@@ -139,6 +139,11 @@ def parse_events(parser, root_element, still_parsing, text_lines, game_state):
                     pass
                 elif elem.attrib["id"] in ("talk", "whispers", "thoughts"):
                     pass
+                elif elem.attrib["id"] in ("group"):
+                    pass
+                # does not yet pass all text contents, which we want...
+                elif elem.attrib["id"] in ("inv"):
+                    pass
                 # catchall for elements WITH 'id' attr
                 else:
                     text_lines.put(
@@ -263,7 +268,7 @@ def parse_events(parser, root_element, still_parsing, text_lines, game_state):
             if elem.attrib.get("id"):
                 if elem.attrib["id"] == "roomName":
                     pass
-                if elem.attrib["id"] == "":
+                if elem.attrib["id"] == "" or elem.attrib["id"] is None:
                     pass
 
             # catchall
