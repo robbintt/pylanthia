@@ -11,5 +11,13 @@ You feel intense strain
 You feel intense strain as you try to manipulate the mana streams to form this pattern, and you are not certain that you will have enough mental stamina to complete it.
 
 # Hollow Eve
-You fish
-Darkbox
+#You fish
+#Darkbox
+And you find something!
+As you remove your hand from the Darkbox
+
+# Hunting
+# highlights aren't regex enabled yet
+ *
+[
+With a \*click\*

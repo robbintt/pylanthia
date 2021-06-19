@@ -23,15 +23,12 @@ The buckle on \w+'s leather thighband pulses with a soft light.
 Like the trembling illusion of heat haze, a shimmer runs over \w+'s thighband.  The mirage is gone as quickly as it appeared.
 The hue of \w+'s earrings dulls for a moment, and then a sheen washes over it, making the color brighter again.
 The dwalgim on \w+'s crown pulses with a soft light.
+Tiny vengeance rubies on \w+'s leather armband pulse with an ominous glow.
 
 # PETS
 
 a half dozen bees
-a pudgy lab rat
 vivacious azure kitten
-'s black rat
-'s otter
-'s weasel
 diamond snail
 velvety black jumping spider
 white and grey rat
@@ -39,7 +36,15 @@ white-bellied brown rat
 red-eyed white rat
 temple rat
 lab rat
+barn rat
+pudgy lab rat
 fuzzy-faced black rat
+Velakan rat
+'s forest rat
+'s black rat
+'s otter
+'s weasel
+'s badger
 numerous bees
 bees swarm
 
