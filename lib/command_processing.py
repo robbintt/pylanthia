@@ -1,10 +1,12 @@
 """
 """
 import time
+import re
 import logging
 
 logging.getLogger(__name__)
 
+from lib import text_processing
 
 def process_command_queue(game_state, tcp_lines, gamesock, COMMAND_PROCESS_SPEED=0.3):
     """ process game commands from the submit queue
@@ -31,6 +33,23 @@ def process_command_queue(game_state, tcp_lines, gamesock, COMMAND_PROCESS_SPEED
             # maybe timestamped as its own output stream, so it can be turned off on certain windows
             submitted_command = game_state.command_queue.get()
 
+            # need more utilities here and decide on a permanent prefix
+
+            if submitted_command[0] == ord(b"/"):
+                tcp_lines.put(b"pylanthia> " + submitted_command)
+                logging.info(submitted_command)
+
+                # currently for reloading highlights, but consider a hot reload mechanism for pylanthia modules, too
+                if submitted_command == b"/reload":
+                    # need to generalize this, add a method in game_state to reload from itself
+                    game_state.highlight_set = set(text_processing.line_config_processor(game_state.highlight_file))
+                    game_state.excludes_set = set(text_processing.line_config_processor(game_state.excludes_file))
+                    game_state.excludes_regex = [re.compile(text) for text in text_processing.line_config_processor(game_state.excludes_regex_file)]
+                    tcp_lines.put(b"[Pylanthia] Highlights & Excludes reloaded.")
+
+                continue # don't send / commands to game server
+
+            # send the command to game 
             gamesock.sendall(submitted_command + b"\n")
             tcp_lines.put(b"> " + submitted_command)
             logging.info(submitted_command)
@@ -53,7 +72,9 @@ def process_command_queue(game_state, tcp_lines, gamesock, COMMAND_PROCESS_SPEED
         # it's complicated, the commands should have an implied order in their data structure
         # then the queue can be sorted again after putting an item on the queue
         # more info to inform the `command data structure`
-        if not game_state.rt_command_queue.empty():
-            current_roundtime = int(game_state.roundtime - game_state.time)
-            if current_roundtime == 0:
-                game_state.command_queue.put(game_state.rt_command_queue.get())
+        #
+        # 2021/6/14- causes more harm than good
+        #if not game_state.rt_command_queue.empty():
+        #    current_roundtime = int(game_state.roundtime - game_state.time)
+        #    if current_roundtime == 0:
+        #        game_state.command_queue.put(game_state.rt_command_queue.get())
