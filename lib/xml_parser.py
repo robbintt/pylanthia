@@ -30,6 +30,16 @@ def parse_events(parser, root_element, still_parsing, text_lines, game_state):
 
     """
 
+    def textbox_wrapper(unwrapped_string):
+        ''' Helper to wrap an unwrapped string into a tuple with its type for urwid, and convert to bytes
+
+        :type unwrapped_string: bytes
+
+        Note: that this trailing comma is as-intended, a tuple of a tuple: ('text', bytes(unwrapped_string)),
+        '''
+        return ("text", unwrapped_string),
+
+
     for action, elem in parser.read_events():
 
         # store the root element so we can check when it closes
@@ -137,6 +147,9 @@ def parse_events(parser, root_element, still_parsing, text_lines, game_state):
                         text_lines.put("text", elem.tail)
                 elif elem.attrib["id"] == "percWindow":
                     pass
+                elif elem.attrib["id"] == "combat":
+                    if elem.tail:
+                        text_lines.put("text", elem.tail)
                 elif elem.attrib["id"] in ("talk", "whispers", "thoughts"):
                     pass
                 elif elem.attrib["id"] in ("group"):
@@ -219,7 +232,11 @@ def parse_events(parser, root_element, still_parsing, text_lines, game_state):
                 )
                 if elem.attrib["id"] == "speech":
                     if elem.text:
-                        text_lines.put((("text", bytes(elem.text, "utf-8")),))
+                        # TODO - this pattern works, but we should write a wrapper function for all these reprs between them and text_lines.put()
+                        # ALSO is this better than etree.tostring?
+                        #text_lines.put((("text", bytes("".join(elem.itertext()), 'ascii')),))
+                        text_lines.put(textbox_wrapper(bytes("".join(elem.itertext()), 'ascii')))
+                        #text_lines.put((("text", bytes(elem.text, "utf-8")),))
                     pass
                 elif elem.attrib["id"] == "roomDesc":
                     logging.info(b"room text: " + etree.tostring(elem))
@@ -433,9 +450,7 @@ def process_game_xml(preprocessed_lines, text_lines, game_state):
 
                 # the initial nextline is already set up, see directly above
                 if not nextline:
-                    nextline = op_line[linenum][
-                        1
-                    ]  # same as line, but used/incremented in this while loop
+                    nextline = op_line[linenum][1]  # same as line, but used/incremented in this while loop
                 parser.feed(nextline)
 
                 # examine the parser and determine if we should feed more lines or close...
