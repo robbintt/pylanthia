@@ -44,7 +44,7 @@ class GlobalGameState:
         self.lichprocess = None  # set in pylanthia.py, indirection
         self.quit_event = None  # set in pylanthia.py, not sure if that's the ideal spot
         self.input_history = list()
-        self.input_history_count = 0  # must be set when used by history_scroll_mode
+        self.input_history_counter = 0  # must be set when used by history_scroll_mode
         self.history_scroll_mode = False  # true while scrolling history
         self.command_queue = queue.Queue()
         self.rt_command_queue = queue.Queue()

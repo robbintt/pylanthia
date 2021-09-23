@@ -71,6 +71,8 @@ def extend_view_buffer(game_state, text_lines):
         # rolls item 0 out on append due to deque maxlen
         game_state.urwid_views["urwid_main_view"].append(new_line_str)
         i += 1
+        if game_state.input_history_counter > 0:
+            game_state.input_history_counter -= 1
 
     return
 
