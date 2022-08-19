@@ -176,7 +176,12 @@ def parse_events(parser, root_element, still_parsing, text_lines, game_state):
             """
 
             if elem.attrib.get("id"):
+                if elem.attrib["id"] == "main":
+                    return
                 if elem.attrib["id"] == "room":
+                    return
+                    # covered by the room text
+                    '''
                     text_lines.put(
                         (
                             (
@@ -188,6 +193,7 @@ def parse_events(parser, root_element, still_parsing, text_lines, game_state):
                             ),
                         )
                     )
+                    '''
 
             # catchall
             else:
