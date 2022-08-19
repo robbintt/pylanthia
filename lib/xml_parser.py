@@ -239,15 +239,16 @@ def parse_events(parser, root_element, still_parsing, text_lines, game_state):
                         #text_lines.put((("text", bytes(elem.text, "utf-8")),))
                     pass
                 elif elem.attrib["id"] == "roomDesc":
+                    if not elem.text:
+                        return
                     logging.info(b"room text: " + etree.tostring(elem))
                     # logging.info(b"room text: " + bytes(elem, 'ascii'))
-                    # line = (('text', elem.text),)
-                    # text_lines.put(line)
-                    text_lines.put((("text", etree.tostring(elem)),))
-                    pass
+                    line = (('text', bytes("".join(elem.itertext()).strip()+str(elem.tail or ""), 'ascii')),)
+                    text_lines.put(line)
+                    # why use this?
+                    #text_lines.put((("text", etree.tostring(elem)),))
                 # attrib == id catchall
                 else:
-                    pass
                     text_lines.put(
                         (("text", DEBUG_PREFIX + etree.tostring(elem)),)
                     )  # tostring is making a bytes string
@@ -257,7 +258,6 @@ def parse_events(parser, root_element, still_parsing, text_lines, game_state):
                 text_lines.put(
                     (("text", b"preset no id:" + etree.tostring(elem)),)
                 )  # tostring is making a bytes string
-                pass
             return
 
         def dialogData(elem):
@@ -283,16 +283,18 @@ def parse_events(parser, root_element, still_parsing, text_lines, game_state):
             """
             """
             if elem.attrib.get("id"):
+
                 if elem.attrib["id"] == "roomName":
                     pass
-                if elem.attrib["id"] == "" or elem.attrib["id"] is None:
+                if not elem.attrib["id"] or elem.attrib["id"] == "" or elem.attrib["id"] is None:
                     pass
 
             # catchall
             else:
-                text_lines.put(
-                    (("text", b"style: " + etree.tostring(elem)),)
-                )  # tostring is making a bytes string
+                if elem.text:
+                    text_lines.put(
+                        (("text", b"style: " + etree.tostring(elem)),)
+                    )  # tostring is making a bytes string
             return
 
         def resource(elem):
